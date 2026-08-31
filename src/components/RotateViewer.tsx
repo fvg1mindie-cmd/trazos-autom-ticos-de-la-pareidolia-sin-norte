@@ -109,18 +109,18 @@ export function RotateViewer({
         }`}
       >
         {src ? (
-          <img
-            src={src}
-            alt={alt}
-            width={832}
-            height={1040}
-            draggable={false}
-            className="w-full object-cover will-change-transform"
-            style={{
-              transform: `rotate(${angle}deg) scale(${angle % 90 !== 0 ? 1.35 : 1})`,
-              transition: dragging ? "none" : "transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)",
-            }}
-          />
+          <div className="flex aspect-square w-full items-center justify-center p-4">
+            <img
+              src={src}
+              alt={alt}
+              draggable={false}
+              className="max-h-full max-w-full object-contain will-change-transform"
+              style={{
+                transform: `rotate(${angle}deg)`,
+                transition: dragging ? "none" : "transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)",
+              }}
+            />
+          </div>
         ) : (
           <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-3 p-8 text-center">
             <span className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
