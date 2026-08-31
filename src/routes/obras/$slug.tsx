@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getArtwork, getNeighbors } from "@/lib/artworks";
+import { RotateViewer } from "@/components/RotateViewer";
 
 export const Route = createFileRoute("/obras/$slug")({
   beforeLoad: ({ params }) => {
@@ -61,15 +62,11 @@ function ObraPage() {
         <div className="mx-auto grid max-w-5xl gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr] md:gap-14 md:py-20">
           {/* Imagen */}
           <figure className="rise-in">
-            <div className="ring-glow overflow-hidden rounded-2xl border border-border/70 bg-card">
-              <img
-                src={obra.imagen}
-                alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
-                width={832}
-                height={1040}
-                className="w-full object-cover"
-              />
-            </div>
+            <RotateViewer
+              src={obra.imagen}
+              alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
+              storageKey={`orientacion-${obra.slug}`}
+            />
           </figure>
 
           {/* Ficha */}

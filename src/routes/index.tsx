@@ -90,14 +90,24 @@ function Index() {
             >
               <figure>
                 <div className="overflow-hidden rounded-2xl border border-border/70 bg-card transition-shadow duration-500 group-hover:ring-glow">
-                  <img
-                    src={obra.imagen}
-                    alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
-                    width={832}
-                    height={1040}
-                    loading={i === 0 ? "eager" : "lazy"}
-                    className="aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                  />
+                  {obra.imagen ? (
+                    <img
+                      src={obra.imagen}
+                      alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
+                      width={832}
+                      height={1040}
+                      loading={i === 0 ? "eager" : "lazy"}
+                      className="aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <div className="flex aspect-[4/5] w-full items-center justify-center p-6">
+                      <span className="text-center font-mono text-[11px] tracking-[0.3em] text-muted-foreground/60 uppercase">
+                        {obra.catalogo}
+                        <br />
+                        <span className="normal-case tracking-normal">obra pendiente</span>
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <figcaption className="mt-4 flex items-baseline justify-between gap-3">
                   <div>
