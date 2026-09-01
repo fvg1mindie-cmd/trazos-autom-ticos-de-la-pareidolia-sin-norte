@@ -2,19 +2,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw, RotateCw, RefreshCw } from "lucide-react";
 
 /**
- * Visor de obra con giro libre de 360°.
- * "Sin norte": la obra no tiene orientación fija; el espectador decide.
- * - Arrastrar sobre la imagen gira libremente.
- * - Botones giran en pasos de 15°; doble clic / botón central reorienta a 0°.
+ * Visor de obra con giro libre de 360° en el plano (rotación 2D sobre el eje Z).
+ * Sin perspectiva ni transformaciones 3D: la textura del papel se conserva intacta.
+ * "Sin norte": la obra no tiene orientación fija; el espectador la detiene donde quiera.
  */
 export function RotateViewer({
   src,
   alt,
   storageKey,
+  showControls = true,
+  fill = false,
 }: {
   src: string;
   alt: string;
   storageKey: string;
+  /** Oculta con fundido la barra de controles (el gesto de giro sigue activo). */
+  showControls?: boolean;
+  /** Modo inmersivo: la obra ocupa todo el alto disponible, sin marco. */
+  fill?: boolean;
 }) {
   const [angle, setAngle] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -85,7 +90,7 @@ export function RotateViewer({
   const reset = () => persist(0);
 
   return (
-    <div className="select-none">
+    <div className={`select-none ${fill ? "flex h-full flex-col" : ""}`}>
       <div
         ref={frameRef}
         role="slider"
@@ -104,12 +109,18 @@ export function RotateViewer({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onDoubleClick={reset}
-        className={`ring-glow touch-none overflow-hidden rounded-2xl border border-border/70 bg-card outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
+        className={`touch-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          fill
+            ? "flex-1 rounded-none"
+            : "ring-glow rounded-2xl border border-border/70 bg-card"
+        } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
       >
         {src ? (
-          <div className="flex aspect-square w-full items-center justify-center p-4">
+          <div
+            className={`flex w-full items-center justify-center ${
+              fill ? "h-full p-2 sm:p-6" : "aspect-square p-4"
+            }`}
+          >
             <img
               src={src}
               alt={alt}
@@ -133,39 +144,46 @@ export function RotateViewer({
         )}
       </div>
 
-      {/* Controles de giro */}
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <button
-          type="button"
-          onClick={() => step(-15)}
-          aria-label="Girar 15 grados a la izquierda"
-          className="rounded-full border border-border/70 bg-card p-2.5 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={reset}
-          aria-label="Volver a la orientación original"
-          className="rounded-full border border-border/70 bg-card px-4 py-2.5 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:border-neon/50 hover:text-neon"
-        >
-          <span className="inline-flex items-center gap-2">
-            <RefreshCw className="h-3.5 w-3.5" />
-            {Math.round(((angle % 360) + 360) % 360)}°
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => step(15)}
-          aria-label="Girar 15 grados a la derecha"
-          className="rounded-full border border-border/70 bg-card p-2.5 text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
-        >
-          <RotateCw className="h-4 w-4" />
-        </button>
+      {/* Controles de giro (colapsables con fundido) */}
+      <div
+        className={`transition-opacity duration-500 ${
+          showControls ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        aria-hidden={!showControls}
+      >
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => step(-15)}
+            aria-label="Girar 15 grados a la izquierda"
+            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            aria-label="Volver a la orientación original"
+            className="rounded-full border border-border/70 bg-card/80 px-4 py-2.5 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase backdrop-blur transition-colors hover:border-neon/50 hover:text-neon"
+          >
+            <span className="inline-flex items-center gap-2">
+              <RefreshCw className="h-3.5 w-3.5" />
+              {Math.round(((angle % 360) + 360) % 360)}°
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => step(15)}
+            aria-label="Girar 15 grados a la derecha"
+            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="mt-3 pb-1 text-center font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase">
+          Sin norte · arrastrá para girar la obra
+        </p>
       </div>
-      <p className="mt-3 text-center font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase">
-        Sin norte · arrastrá para girar la obra
-      </p>
     </div>
   );
 }
