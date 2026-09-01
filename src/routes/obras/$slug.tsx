@@ -1,114 +1,156 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { getArtwork, getNeighbors } from "@/lib/artworks";
+import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
 import { RotateViewer } from "@/components/RotateViewer";
+import { AmbientAudio } from "@/components/AmbientAudio";
+import { ObraTienda } from "@/components/ObraTienda";
 
 export const Route = createFileRoute("/obras/$slug")({
-  beforeLoad: ({ params }) => {
-    if (!getArtwork(params.slug)) throw notFound();
-  },
-  head: ({ params }) => {
-    const obra = getArtwork(params.slug);
-    return {
-      meta: [
-        { title: `${obra?.titulo ?? "Obra"} — Trazos Automáticos de la Pareidolia Sin Norte` },
-        {
-          name: "description",
-          content: obra?.descripcion ?? "",
-        },
-        { property: "og:title", content: `${obra?.titulo} — T·A·P·S·N` },
-        { property: "og:description", content: obra?.descripcion ?? "" },
-      ],
-    };
-  },
+  loader: ({ context }) => context.queryClient.ensureQueryData(artworksQueryOptions),
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug} — Trazos Automáticos de la Pareidolia Sin Norte` },
+      {
+        name: "description",
+        content:
+          "Obra sin arriba ni abajo: giranla 360° y detenela donde tu mirada la complete.",
+      },
+      { property: "og:title", content: "Obra — T·A·P·S·N" },
+      {
+        property: "og:description",
+        content:
+          "Obra sin arriba ni abajo: giranla 360° y detenela donde tu mirada la complete.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: ObraPage,
-  notFoundComponent: () => (
+  errorComponent: () => <Aviso texto="No pudimos abrir esta obra" />,
+  notFoundComponent: () => <Aviso texto="Esta obra no está en el archivo" />,
+});
+
+function Aviso({ texto }: { texto: string }) {
+  return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="text-center">
-        <p className="font-display text-3xl font-light">Esta obra no está en el archivo</p>
+        <p className="font-display text-3xl font-light">{texto}</p>
         <Link
           to="/"
-          className="mt-6 inline-block font-mono text-[11px] tracking-[0.25em] text-primary uppercase text-glow-primary"
+          className="text-glow-primary mt-6 inline-block font-mono text-[11px] tracking-[0.25em] text-primary uppercase"
         >
           ← Volver al muro
         </Link>
       </div>
     </div>
-  ),
-});
+  );
+}
 
 function ObraPage() {
   const { slug } = Route.useParams();
-  const obra = getArtwork(slug)!;
-  const { prev, next } = getNeighbors(slug);
+  const { data: lista } = useSuspenseQuery(artworksQueryOptions);
+  const obra = findArtwork(lista, slug);
+  const { prev, next } = findNeighbors(lista, slug);
+  const [uiVisible, setUiVisible] = useState(false);
+
+  if (!obra) return <Aviso texto="Esta obra no está en el archivo" />;
+
+  const fade = (visible: boolean) =>
+    `transition-opacity duration-500 ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`;
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+      {/* Lienzo inmersivo */}
+      <section className="relative h-[100svh] w-full">
+        <RotateViewer
+          src={obra.imagen}
+          alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
+          storageKey={`orientacion-${obra.slug}`}
+          showControls={false}
+          fill
+        />
+
+        {/* Encabezado flotante */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between px-5 ${fade(uiVisible)}`}
+        >
           <Link
             to="/"
-            className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase transition-colors hover:text-neon"
+            className="pointer-events-auto rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase backdrop-blur transition-colors hover:text-neon"
           >
             ← Muro
           </Link>
-          <span className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
+          <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
             {obra.catalogo}
           </span>
         </div>
-      </header>
 
-      <main className="nebula-bg">
-        <div className="mx-auto grid max-w-5xl gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr] md:gap-14 md:py-20">
-          {/* Imagen */}
-          <figure className="rise-in">
-            <RotateViewer
-              src={obra.imagen}
-              alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
-              storageKey={`orientacion-${obra.slug}`}
-            />
-          </figure>
-
-          {/* Ficha */}
-          <div className="rise-in self-center" style={{ animationDelay: "120ms" }}>
-            <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
-              Ficha de obra
-            </p>
-            <h1 className="font-display mt-4 text-4xl leading-tight font-light tracking-tight text-balance md:text-5xl">
-              {obra.titulo}
-            </h1>
-            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted-foreground text-pretty">
-              {obra.descripcion}
-            </p>
-
-            <dl className="mt-10 space-y-3 border-t border-border/70 pt-6 font-mono text-[12px] tracking-[0.15em] uppercase">
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">Técnica</dt>
-                <dd className="text-right">{obra.tecnica}</dd>
-              </div>
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">Soporte</dt>
-                <dd className="text-right">{obra.soporte}</dd>
-              </div>
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">Formato</dt>
-                <dd className="text-right">{obra.formato}</dd>
-              </div>
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">Año</dt>
-                <dd className="text-right">{obra.anio}</dd>
-              </div>
-              <div className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">Catálogo</dt>
-                <dd className="text-right text-primary text-glow-primary">{obra.catalogo}</dd>
-              </div>
-            </dl>
-          </div>
+        {/* Controles de rotación flotantes */}
+        <div
+          className={`absolute inset-x-0 bottom-6 z-20 flex justify-center ${fade(uiVisible)}`}
+        >
+          <RotateControlsMirror slug={obra.slug} />
         </div>
 
-        {/* Anterior / siguiente */}
+        {/* Toggles siempre disponibles */}
+        <div className="absolute right-5 bottom-6 z-30 flex flex-col gap-2">
+          <AmbientAudio />
+          <button
+            type="button"
+            onClick={() => setUiVisible((v) => !v)}
+            aria-pressed={uiVisible}
+            aria-label={uiVisible ? "Ocultar la interfaz" : "Mostrar la interfaz"}
+            className="rounded-full border border-border/70 bg-card/70 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+          >
+            {uiVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </section>
+
+      {/* Ficha + tienda */}
+      <section
+        id="ficha"
+        className={`nebula-bg border-t border-border/60 ${fade(uiVisible)}`}
+        aria-hidden={!uiVisible}
+      >
+        <div className="mx-auto max-w-2xl px-6 py-16">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
+            Ficha de obra
+          </p>
+          <h1 className="font-display mt-4 text-4xl leading-tight font-light tracking-tight text-balance md:text-5xl">
+            {obra.titulo}
+          </h1>
+          {obra.descripcion && (
+            <p className="mt-6 text-[15px] leading-relaxed text-muted-foreground text-pretty">
+              {obra.descripcion}
+            </p>
+          )}
+
+          <dl className="mt-10 space-y-3 border-t border-border/70 pt-6 font-mono text-[12px] tracking-[0.15em] uppercase">
+            {[
+              ["Técnica", obra.tecnica],
+              ["Soporte", obra.soporte],
+              ["Formato", obra.formato],
+              ["Año", String(obra.anio || "—")],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-6">
+                <dt className="text-muted-foreground">{k}</dt>
+                <dd className="text-right">{v}</dd>
+              </div>
+            ))}
+            <div className="flex justify-between gap-6">
+              <dt className="text-muted-foreground">Catálogo</dt>
+              <dd className="text-glow-primary text-right text-primary">{obra.catalogo}</dd>
+            </div>
+          </dl>
+
+          <ObraTienda obra={obra} />
+        </div>
+
         <nav className="border-t border-border/60">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-8">
+          <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-8">
             {prev ? (
               <Link
                 to="/obras/$slug"
@@ -135,15 +177,17 @@ function ObraPage() {
             )}
           </div>
         </nav>
-      </main>
-
-      <footer className="border-t border-border/60">
-        <div className="mx-auto px-6 py-8 max-w-5xl">
-          <p className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase">
-            © 2024 · Trazos Automáticos de la Pareidolia Sin Norte
-          </p>
-        </div>
-      </footer>
+      </section>
     </div>
+  );
+}
+
+/** Controles que actúan sobre la misma orientación guardada de la obra. */
+function RotateControlsMirror({ slug }: { slug: string }) {
+  return (
+    <p className="rounded-full border border-border/60 bg-background/60 px-5 py-2.5 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
+      Sin norte · arrastrá la obra para girarla · doble clic reinicia
+      <span className="sr-only"> ({slug})</span>
+    </p>
   );
 }
