@@ -23,7 +23,13 @@ export type Database = {
           formato: string | null
           id: string
           imagen_url: string
+          impresiones: Json
+          moneda: string
           orden: number
+          original_vendido: boolean
+          precio_marco: number
+          precio_marco_magnetico: number
+          precio_original: number | null
           slug: string
           soporte: string | null
           tecnica: string | null
@@ -37,7 +43,13 @@ export type Database = {
           formato?: string | null
           id?: string
           imagen_url: string
+          impresiones?: Json
+          moneda?: string
           orden?: number
+          original_vendido?: boolean
+          precio_marco?: number
+          precio_marco_magnetico?: number
+          precio_original?: number | null
           slug: string
           soporte?: string | null
           tecnica?: string | null
@@ -51,7 +63,13 @@ export type Database = {
           formato?: string | null
           id?: string
           imagen_url?: string
+          impresiones?: Json
+          moneda?: string
           orden?: number
+          original_vendido?: boolean
+          precio_marco?: number
+          precio_marco_magnetico?: number
+          precio_original?: number | null
           slug?: string
           soporte?: string | null
           tecnica?: string | null
