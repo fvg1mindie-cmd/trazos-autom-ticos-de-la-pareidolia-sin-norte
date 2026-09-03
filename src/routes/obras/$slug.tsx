@@ -87,13 +87,6 @@ function ObraPage() {
           </span>
         </div>
 
-        {/* Controles de rotación flotantes */}
-        <div
-          className={`absolute inset-x-0 bottom-6 z-20 flex justify-center ${fade(uiVisible)}`}
-        >
-          <RotateControlsMirror slug={obra.slug} />
-        </div>
-
         {/* Toggles siempre disponibles */}
         <div className="absolute right-5 bottom-6 z-30 flex flex-col gap-2">
           <AmbientAudio />
@@ -179,15 +172,5 @@ function ObraPage() {
         </nav>
       </section>
     </div>
-  );
-}
-
-/** Controles que actúan sobre la misma orientación guardada de la obra. */
-function RotateControlsMirror({ slug }: { slug: string }) {
-  return (
-    <p className="rounded-full border border-border/60 bg-background/60 px-5 py-2.5 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
-      Sin norte · arrastrá la obra para girarla · doble clic reinicia
-      <span className="sr-only"> ({slug})</span>
-    </p>
   );
 }
