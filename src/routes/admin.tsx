@@ -30,12 +30,16 @@ function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
@@ -53,6 +57,7 @@ function AdminPage() {
         setLoading(false);
       });
   }, [session]);
+
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
@@ -77,8 +82,11 @@ function AdminPage() {
           </p>
         ) : !session ? (
           <AuthForm />
+        ) : recovery ? (
+          <NewPasswordForm onDone={() => setRecovery(false)} />
         ) : isAdmin ? (
           <AdminPanel session={session} />
+
         ) : (
           <div className="rounded-2xl border border-border/70 bg-card p-8 text-center">
             <p className="font-display text-2xl font-light">Cuenta sin permisos de carga</p>
@@ -156,15 +164,77 @@ function AuthForm() {
         </button>
         {msg && <p className="text-sm text-neon">{msg}</p>}
       </form>
-      <button
-        onClick={() => setMode(mode === "login" ? "signup" : "login")}
-        className="mt-6 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
-      >
-        {mode === "login" ? "¿Primera vez? Crear cuenta" : "Ya tengo cuenta"}
-      </button>
+      <div className="mt-6 flex flex-col gap-3">
+        <button
+          onClick={() => setMode(mode === "login" ? "signup" : "login")}
+          className="text-left font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
+        >
+          {mode === "login" ? "¿Primera vez? Crear cuenta" : "Ya tengo cuenta"}
+        </button>
+        <button
+          onClick={async () => {
+            if (!email) {
+              setMsg("Escribí tu correo arriba y tocá de nuevo.");
+              return;
+            }
+            setBusy(true);
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: `${window.location.origin}/admin`,
+            });
+            setMsg(
+              error ? error.message : "Te enviamos un enlace para cambiar la contraseña.",
+            );
+            setBusy(false);
+          }}
+          className="text-left font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-neon"
+        >
+          Olvidé mi contraseña
+        </button>
+      </div>
     </div>
   );
 }
+
+function NewPasswordForm({ onDone }: { onDone: () => void }) {
+  const [password, setPassword] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) setMsg(error.message);
+    else onDone();
+    setBusy(false);
+  }
+
+  return (
+    <div className="mx-auto max-w-sm">
+      <h1 className="font-display text-3xl font-light tracking-tight">Nueva contraseña</h1>
+      <form onSubmit={submit} className="mt-8 space-y-4">
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Nueva contraseña"
+          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full rounded-lg bg-primary px-4 py-3 font-mono text-[11px] tracking-[0.25em] text-primary-foreground uppercase transition-opacity disabled:opacity-50"
+        >
+          {busy ? "…" : "Guardar contraseña"}
+        </button>
+        {msg && <p className="text-sm text-neon">{msg}</p>}
+      </form>
+    </div>
+  );
+}
+
 
 /** "A4=80, A3=120" -> [{escala:"A4",precio:80}, ...] */
 function parseImpresiones(txt: string) {
