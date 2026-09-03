@@ -30,12 +30,16 @@ function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+    });
     return () => subscription.unsubscribe();
   }, []);
 
@@ -53,6 +57,7 @@ function AdminPage() {
         setLoading(false);
       });
   }, [session]);
+
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
