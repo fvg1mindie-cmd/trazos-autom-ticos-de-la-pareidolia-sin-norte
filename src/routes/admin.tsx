@@ -82,8 +82,11 @@ function AdminPage() {
           </p>
         ) : !session ? (
           <AuthForm />
+        ) : recovery ? (
+          <NewPasswordForm onDone={() => setRecovery(false)} />
         ) : isAdmin ? (
           <AdminPanel session={session} />
+
         ) : (
           <div className="rounded-2xl border border-border/70 bg-card p-8 text-center">
             <p className="font-display text-2xl font-light">Cuenta sin permisos de carga</p>
