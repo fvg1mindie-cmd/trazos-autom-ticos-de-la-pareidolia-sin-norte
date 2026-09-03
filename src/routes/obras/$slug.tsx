@@ -68,7 +68,7 @@ function ObraPage() {
           src={obra.imagen}
           alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
           storageKey={`orientacion-${obra.slug}`}
-          showControls={false}
+          showControls={uiVisible}
           fill
         />
 
