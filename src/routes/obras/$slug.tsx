@@ -68,7 +68,7 @@ function ObraPage() {
           src={obra.imagen}
           alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
           storageKey={`orientacion-${obra.slug}`}
-          showControls={false}
+          showControls={uiVisible}
           fill
         />
 
@@ -85,13 +85,6 @@ function ObraPage() {
           <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
             {obra.catalogo}
           </span>
-        </div>
-
-        {/* Controles de rotación flotantes */}
-        <div
-          className={`absolute inset-x-0 bottom-6 z-20 flex justify-center ${fade(uiVisible)}`}
-        >
-          <RotateControlsMirror slug={obra.slug} />
         </div>
 
         {/* Toggles siempre disponibles */}
@@ -179,15 +172,5 @@ function ObraPage() {
         </nav>
       </section>
     </div>
-  );
-}
-
-/** Controles que actúan sobre la misma orientación guardada de la obra. */
-function RotateControlsMirror({ slug }: { slug: string }) {
-  return (
-    <p className="rounded-full border border-border/60 bg-background/60 px-5 py-2.5 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
-      Sin norte · arrastrá la obra para girarla · doble clic reinicia
-      <span className="sr-only"> ({slug})</span>
-    </p>
   );
 }
