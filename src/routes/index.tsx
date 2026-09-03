@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { artworks } from "@/lib/artworks";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { artworksQueryOptions } from "@/lib/artworks";
+import { AmbientAudio } from "@/components/AmbientAudio";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(artworksQueryOptions),
   head: () => ({
     meta: [
       { title: "Trazos Automáticos de la Pareidolia Sin Norte — Archivo de obras" },
       {
         name: "description",
         content:
-          "Dibujos que se hacen solos: un archivo de trazos automáticos donde la mirada encuentra rostros, aves y manos que nunca fueron dirigidos.",
+          "Dibujos sin arriba ni abajo: giralos 360° y detenelos donde tu mirada los complete. Archivo de trazos automáticos, originales e impresiones.",
       },
       {
         property: "og:title",
@@ -17,14 +20,26 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Dibujos que se hacen solos: un archivo de trazos automáticos donde la mirada encuentra rostros, aves y manos que nunca fueron dirigidos.",
+          "Dibujos sin arriba ni abajo: giralos 360° y detenelos donde tu mirada los complete.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
+  errorComponent: () => (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
+      <p className="font-display text-2xl font-light">
+        El archivo no respondió. Recargá la página.
+      </p>
+    </div>
+  ),
+  notFoundComponent: () => null,
 });
 
 function Index() {
+  const { data: artworks } = useSuspenseQuery(artworksQueryOptions);
+
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
       {/* Barra superior */}
@@ -40,6 +55,7 @@ function Index() {
             <a href="#nota" className="text-muted-foreground transition-colors hover:text-neon">
               Nota
             </a>
+            <AmbientAudio />
           </nav>
         </div>
       </header>
@@ -48,15 +64,13 @@ function Index() {
       <section className="nebula-bg relative overflow-hidden">
         <div className="mx-auto max-w-5xl px-6 pt-20 pb-16 md:pt-28 md:pb-24">
           <p className="rise-in font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
-            Archivo · {artworks.length} obras · 2023 — 2024
+            Archivo · {artworks.length} obras
           </p>
           <h1 className="rise-in font-display mt-8 text-[13vw] leading-[0.95] font-light tracking-tight text-balance sm:text-6xl md:text-8xl">
             Trazos automáticos
             <br />
             de la{" "}
-            <em className="text-glow-primary text-primary font-normal italic">
-              pareidolia
-            </em>
+            <em className="text-glow-primary font-normal text-primary italic">pareidolia</em>
             <br />
             sin norte
           </h1>
@@ -65,7 +79,36 @@ function Index() {
             a pesar de todo, vuelve a encontrar: un rostro, una nube, una boca
             que no estaba.
           </p>
-          <div className="mt-12 h-px w-full hairline-glow" />
+          <div className="hairline-glow mt-12 h-px w-full" />
+        </div>
+      </section>
+
+      {/* Manifiesto: Pareidolia y el Trazo Vivo */}
+      <section id="pareidolia" className="border-b border-border/60">
+        <div className="mx-auto max-w-5xl scroll-mt-20 px-6 py-16">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
+            Pareidolia y el trazo vivo
+          </p>
+          <div className="mt-8 grid gap-8 md:grid-cols-2">
+            <p className="font-display text-2xl leading-snug font-light text-pretty md:text-3xl">
+              Estas obras nacen sin orientación fija. No tienen arriba ni abajo,
+              ni derecha ni revés: el norte fue la primera cosa que las abandonó.
+            </p>
+            <div className="space-y-5 text-[15px] leading-relaxed text-muted-foreground">
+              <p>
+                La pareidolia es esa insistencia del ojo en encontrar rostros
+                donde solo hay mancha. Acá el trazo llega primero, automático,
+                sin intención de decir nada; la figura aparece después, y
+                aparece en vos.
+              </p>
+              <p>
+                Por eso cada obra se puede girar 360° y detener en cualquier
+                ángulo. La pieza no está terminada hasta que alguien elige la
+                posición en que quiere verla. El dibujo lo hice yo; la imagen la
+                hacés vos, y podés cambiarla cuando quieras.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -89,13 +132,11 @@ function Index() {
               className={`group block ${i % 3 === 1 ? "sm:mt-10" : ""}`}
             >
               <figure>
-                <div className="overflow-hidden rounded-2xl border border-border/70 bg-card transition-shadow duration-500 group-hover:ring-glow">
+                <div className="group-hover:ring-glow overflow-hidden rounded-2xl border border-border/70 bg-card transition-shadow duration-500">
                   {obra.imagen ? (
                     <img
                       src={obra.imagen}
                       alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
-                      width={832}
-                      height={1040}
                       loading={i === 0 ? "eager" : "lazy"}
                       className="aspect-[4/5] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                     />
@@ -104,7 +145,7 @@ function Index() {
                       <span className="text-center font-mono text-[11px] tracking-[0.3em] text-muted-foreground/60 uppercase">
                         {obra.catalogo}
                         <br />
-                        <span className="normal-case tracking-normal">obra pendiente</span>
+                        <span className="tracking-normal normal-case">obra pendiente</span>
                       </span>
                     </div>
                   )}
@@ -115,7 +156,10 @@ function Index() {
                       {obra.titulo}
                     </h3>
                     <p className="mt-1 font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                      {obra.tecnica} · {obra.anio}
+                      {obra.tecnica} · {obra.anio || "—"}
+                      {obra.originalVendido && (
+                        <span className="ml-2 text-neon">· vendida</span>
+                      )}
                     </p>
                   </div>
                   <span className="font-mono text-[11px] tracking-[0.18em] text-neon/80">
@@ -136,12 +180,13 @@ function Index() {
           </p>
           <p className="font-display mt-8 max-w-2xl text-2xl leading-snug font-light text-pretty md:text-3xl">
             «La pareidolia sin norte no busca sentido. Dibuja con la mano
-            abierta y deja que el trazo, sin mapa, se encuentre solo. El norte
-            fue la primera cosa que lo abandonó.»
+            abierta y deja que el trazo, sin mapa, se encuentre solo.»
           </p>
           <p className="mt-8 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Archivo abierto, sin edición posterior. Cada obra se numeró en el
-            orden en que apareció.
+            Archivo abierto, sin edición posterior: las fotos conservan el color
+            y el contraste originales del papel. Cada obra se numeró en el orden
+            en que apareció. Cuando el original se vende, su edición se cierra
+            para siempre.
           </p>
         </div>
       </section>
@@ -151,9 +196,12 @@ function Index() {
           <p className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
             Trazos Automáticos · Pareidolia Sin Norte
           </p>
-          <p className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase">
-            © 2024 · Archivo abierto
-          </p>
+          <Link
+            to="/admin"
+            className="font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase transition-colors hover:text-neon"
+          >
+            Panel del artista
+          </Link>
         </div>
       </footer>
     </div>
