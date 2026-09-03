@@ -23,6 +23,7 @@ interface AdminObra {
   titulo: string;
   imagen_url: string;
   orden: number;
+  original_vendido: boolean;
 }
 
 function AdminPage() {
@@ -165,10 +166,23 @@ function AuthForm() {
   );
 }
 
+/** "A4=80, A3=120" -> [{escala:"A4",precio:80}, ...] */
+function parseImpresiones(txt: string) {
+  return txt
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const [escala, precio] = p.split("=");
+      return { escala: (escala ?? "").trim(), precio: Number((precio ?? "0").trim()) };
+    })
+    .filter((i) => i.escala !== "" && Number.isFinite(i.precio));
+}
+
 function AdminPanel({ session }: { session: Session }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [obras, setObras] = useState<AdminOra[]>([]);
+  const [obras, setObras] = useState<AdminObra[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [titulo, setTitulo] = useState("");
   const [tecnica, setTecnica] = useState("");
@@ -176,13 +190,17 @@ function AdminPanel({ session }: { session: Session }) {
   const [formato, setFormato] = useState("");
   const [anio, setAnio] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [precioOriginal, setPrecioOriginal] = useState("");
+  const [precioMarco, setPrecioMarco] = useState("");
+  const [precioMagnetico, setPrecioMagnetico] = useState("");
+  const [impresiones, setImpresiones] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function load() {
     const { data } = await supabase
       .from("artworks")
-      .select("id, slug, catalogo, titulo, imagen_url, orden")
+      .select("id, slug, catalogo, titulo, imagen_url, orden, original_vendido")
       .order("orden", { ascending: true });
     setObras((data ?? []) as AdminObra[]);
   }
@@ -219,6 +237,10 @@ function AdminPanel({ session }: { session: Session }) {
         descripcion,
         imagen_url: `${STORAGE_PREFIX}${path}`,
         orden: next,
+        precio_original: precioOriginal ? Number(precioOriginal) : null,
+        precio_marco: precioMarco ? Number(precioMarco) : 0,
+        precio_marco_magnetico: precioMagnetico ? Number(precioMagnetico) : 0,
+        impresiones: parseImpresiones(impresiones),
       });
       if (insErr) throw insErr;
 
@@ -230,6 +252,10 @@ function AdminPanel({ session }: { session: Session }) {
       setFormato("");
       setAnio("");
       setDescripcion("");
+      setPrecioOriginal("");
+      setPrecioMarco("");
+      setPrecioMagnetico("");
+      setImpresiones("");
       await load();
       await queryClient.invalidateQueries({ queryKey: ["artworks"] });
       router.invalidate();
@@ -237,6 +263,21 @@ function AdminPanel({ session }: { session: Session }) {
       setMsg(err instanceof Error ? err.message : "Error al subir la obra");
     }
     setBusy(false);
+  }
+
+  async function toggleVendida(obra: AdminObra) {
+    const nuevo = !obra.original_vendido;
+    if (
+      nuevo &&
+      !confirm(
+        `Marcar «${obra.titulo}» como vendida cierra su edición para siempre: no se podrán vender impresiones. ¿Confirmás?`,
+      )
+    )
+      return;
+    await supabase.from("artworks").update({ original_vendido: nuevo }).eq("id", obra.id);
+    await load();
+    await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+    router.invalidate();
   }
 
   async function remove(obra: AdminObra) {
@@ -301,6 +342,12 @@ function AdminPanel({ session }: { session: Session }) {
             rows={3}
             className={inputCls}
           />
+          <div className="grid grid-cols-2 gap-4">
+            <input value={precioOriginal} onChange={(e) => setPrecioOriginal(e.target.value)} placeholder="Precio del original" inputMode="numeric" className={inputCls} />
+            <input value={precioMarco} onChange={(e) => setPrecioMarco(e.target.value)} placeholder="Extra enmarcado tradicional" inputMode="numeric" className={inputCls} />
+            <input value={precioMagnetico} onChange={(e) => setPrecioMagnetico(e.target.value)} placeholder="Extra marco magnético" inputMode="numeric" className={inputCls} />
+            <input value={impresiones} onChange={(e) => setImpresiones(e.target.value)} placeholder="Impresiones: A4=80, A3=120" className={inputCls} />
+          </div>
           <button
             type="submit"
             disabled={busy || !file}
@@ -328,6 +375,13 @@ function AdminPanel({ session }: { session: Session }) {
                   {o.titulo}
                 </Link>
               </div>
+              <div className="flex items-center gap-4">
+              <button
+                onClick={() => toggleVendida(o)}
+                className={`font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${o.original_vendido ? "text-neon" : "text-muted-foreground hover:text-primary"}`}
+              >
+                {o.original_vendido ? "Vendida" : "Disponible"}
+              </button>
               <button
                 onClick={() => remove(o)}
                 aria-label={`Borrar ${o.titulo}`}
@@ -335,6 +389,7 @@ function AdminPanel({ session }: { session: Session }) {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
+              </div>
             </li>
           ))}
         </ul>
