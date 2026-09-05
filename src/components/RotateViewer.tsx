@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw, RotateCw, RefreshCw } from "lucide-react";
+import { RotateCcw, RotateCw, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
 
 /**
  * Visor de obra con giro libre de 360° en el plano (rotación 2D sobre el eje Z).
@@ -22,9 +22,12 @@ export function RotateViewer({
   fill?: boolean;
 }) {
   const [angle, setAngle] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startPointer: number; startAngle: number } | null>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinchState = useRef<{ distance: number; zoom: number } | null>(null);
 
   // Restaurar la orientación elegida la última vez
   useEffect(() => {
@@ -58,21 +61,43 @@ export function RotateViewer({
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    dragState.current = {
-      startPointer: pointerAngle(e.clientX, e.clientY),
-      startAngle: angle,
-    };
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      if (a && b) {
+        pinchState.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), zoom };
+        dragState.current = null;
+      }
+    } else {
+      dragState.current = {
+        startPointer: pointerAngle(e.clientX, e.clientY),
+        startAngle: angle,
+      };
+    }
     setDragging(true);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (pointers.current.has(e.pointerId)) {
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    if (pointers.current.size === 2 && pinchState.current) {
+      const [a, b] = [...pointers.current.values()];
+      if (a && b) {
+        const distance = Math.hypot(a.x - b.x, a.y - b.y);
+        setZoom(Math.min(4, Math.max(1, pinchState.current.zoom * (distance / pinchState.current.distance))));
+      }
+      return;
+    }
     if (!dragState.current) return;
     const delta = pointerAngle(e.clientX, e.clientY) - dragState.current.startPointer;
     setAngle(dragState.current.startAngle + delta);
   };
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinchState.current = null;
     if (!dragState.current) return;
     dragState.current = null;
     setDragging(false);
@@ -88,6 +113,7 @@ export function RotateViewer({
 
   const step = (delta: number) => persist(Math.round(angle + delta));
   const reset = () => persist(0);
+  const changeZoom = (delta: number) => setZoom((value) => Math.min(4, Math.max(1, value + delta)));
 
   return (
     <div className={`select-none ${fill ? "flex h-full flex-col" : ""}`}>
@@ -108,6 +134,10 @@ export function RotateViewer({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onWheel={(e) => {
+          e.preventDefault();
+          changeZoom(e.deltaY < 0 ? 0.2 : -0.2);
+        }}
         onDoubleClick={reset}
         className={`touch-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           fill
@@ -127,7 +157,7 @@ export function RotateViewer({
               draggable={false}
               className="max-h-full max-w-full object-contain will-change-transform"
               style={{
-                transform: `rotate(${angle}deg)`,
+                transform: `rotate(${angle}deg) scale(${zoom})`,
                 transition: dragging ? "none" : "transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)",
               }}
             />
@@ -154,6 +184,15 @@ export function RotateViewer({
         <div className="mt-4 flex items-center justify-center gap-2">
           <button
             type="button"
+            onClick={() => changeZoom(-0.25)}
+            disabled={zoom <= 1}
+            aria-label="Alejar la obra"
+            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-30"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => step(-15)}
             aria-label="Girar 15 grados a la izquierda"
             className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary"
@@ -178,6 +217,15 @@ export function RotateViewer({
             className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary"
           >
             <RotateCw className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => changeZoom(0.25)}
+            disabled={zoom >= 4}
+            aria-label="Agrandar la obra"
+            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:border-primary/50 hover:text-primary disabled:opacity-30"
+          >
+            <ZoomIn className="h-4 w-4" />
           </button>
         </div>
         <p className="mt-3 pb-1 text-center font-mono text-[10px] tracking-[0.25em] text-muted-foreground/60 uppercase">

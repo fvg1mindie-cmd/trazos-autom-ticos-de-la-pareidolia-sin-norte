@@ -2,17 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
 /**
- * Audio ambiental armónico en bucle, generado con Web Audio.
- * Un acorde de pad (La menor 9: A2, E3, B3, C4) con filtros suaves,
- * movimiento lento de volumen (LFO) por voz y un leve pulso binaural
- * (110 Hz / 114 Hz) debajo. Entra y sale siempre con fundido.
+ * Campo binaural armónico generado con Web Audio.
+ * Cada nota del acorde La menor 9 suena como un par estéreo separado por 4 Hz:
+ * el oído percibe armonía y, con auriculares, un pulso binaural suave.
  */
-const VOCES: { freq: number; gain: number; lfoHz: number; lfoDepth: number }[] = [
-  { freq: 110.0, gain: 0.5, lfoHz: 0.05, lfoDepth: 0.35 }, // A2 — base
-  { freq: 164.81, gain: 0.32, lfoHz: 0.07, lfoDepth: 0.4 }, // E3
-  { freq: 246.94, gain: 0.22, lfoHz: 0.09, lfoDepth: 0.45 }, // B3
-  { freq: 261.63, gain: 0.16, lfoHz: 0.06, lfoDepth: 0.5 }, // C4
-  { freq: 329.63, gain: 0.1, lfoHz: 0.11, lfoDepth: 0.5 }, // E4 — brillo
+const VOCES: { freq: number; gain: number; lfoHz: number }[] = [
+  { freq: 110, gain: 0.34, lfoHz: 0.035 }, // A2
+  { freq: 164.81, gain: 0.24, lfoHz: 0.043 }, // E3
+  { freq: 220, gain: 0.2, lfoHz: 0.051 }, // A3
+  { freq: 246.94, gain: 0.14, lfoHz: 0.039 }, // B3
+  { freq: 261.63, gain: 0.17, lfoHz: 0.047 }, // C4
 ];
 
 export function AmbientAudio({ className = "" }: { className?: string }) {
@@ -41,50 +40,35 @@ export function AmbientAudio({ className = "" }: { className?: string }) {
       master.connect(ctx.destination);
       gainRef.current = master;
 
-      // Pad armónico: cada voz es un triángulo filtrado con un LFO de volumen
-      // lento y desfasado, así el acorde "respira" y nunca suena estático.
+      // Cada nota se duplica en los canales izquierdo y derecho con 4 Hz
+      // de diferencia. El conjunto forma un acorde, no un tono aislado.
       VOCES.forEach((v, i) => {
-        const osc = ctx!.createOscillator();
-        osc.type = "triangle";
-        osc.frequency.value = v.freq;
-        osc.detune.value = (i % 2 === 0 ? 1 : -1) * 3; // leve coro
-
-        const filtro = ctx!.createBiquadFilter();
-        filtro.type = "lowpass";
-        filtro.frequency.value = 900;
-        filtro.Q.value = 0.4;
-
         const voz = ctx!.createGain();
         voz.gain.value = v.gain;
-
         const lfo = ctx!.createOscillator();
         lfo.frequency.value = v.lfoHz;
         const lfoGain = ctx!.createGain();
-        lfoGain.gain.value = v.gain * v.lfoDepth;
+        lfoGain.gain.value = v.gain * 0.22;
         lfo.connect(lfoGain).connect(voz.gain);
+        voz.connect(master);
 
-        const panner = ctx!.createStereoPanner();
-        panner.pan.value = (i / (VOCES.length - 1)) * 1.2 - 0.6;
-
-        osc.connect(filtro).connect(voz).connect(panner).connect(master);
-        osc.start();
+        [-1, 1].forEach((pan) => {
+          const osc = ctx!.createOscillator();
+          osc.type = i < 2 ? "sine" : "triangle";
+          osc.frequency.value = v.freq + (pan === 1 ? 4 : 0);
+          const filtro = ctx!.createBiquadFilter();
+          filtro.type = "lowpass";
+          filtro.frequency.value = 720;
+          filtro.Q.value = 0.35;
+          const canal = ctx!.createGain();
+          canal.gain.value = 0.5;
+          const panner = ctx!.createStereoPanner();
+          panner.pan.value = pan;
+          osc.connect(filtro).connect(canal).connect(panner).connect(voz);
+          osc.start();
+        });
         lfo.start();
       });
-
-      // Pulso binaural suave debajo (110 / 114 Hz → 4 Hz)
-      const binaural = (freq: number, pan: number) => {
-        const osc = ctx!.createOscillator();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        const g = ctx!.createGain();
-        g.gain.value = 0.18;
-        const panner = ctx!.createStereoPanner();
-        panner.pan.value = pan;
-        osc.connect(g).connect(panner).connect(master);
-        osc.start();
-      };
-      binaural(110, -1);
-      binaural(114, 1);
     }
     await ctx.resume();
     const g = gainRef.current;
@@ -92,7 +76,7 @@ export function AmbientAudio({ className = "" }: { className?: string }) {
       const t = ctx.currentTime;
       g.gain.cancelScheduledValues(t);
       g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.linearRampToValueAtTime(0.14, t + 3); // fade-in
+      g.gain.linearRampToValueAtTime(0.16, t + 3); // fade-in
     }
   }
 
