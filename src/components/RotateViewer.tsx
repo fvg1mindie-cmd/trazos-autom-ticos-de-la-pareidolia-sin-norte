@@ -68,11 +68,12 @@ export function RotateViewer({
         pinchState.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), zoom };
         dragState.current = null;
       }
+    } else {
+      dragState.current = {
+        startPointer: pointerAngle(e.clientX, e.clientY),
+        startAngle: angle,
+      };
     }
-    dragState.current = {
-      startPointer: pointerAngle(e.clientX, e.clientY),
-      startAngle: angle,
-    };
     setDragging(true);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
