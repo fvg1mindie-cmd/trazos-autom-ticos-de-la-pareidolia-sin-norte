@@ -59,7 +59,7 @@ function loadYouTubeApi() {
 
 export function AmbientAudio({ className = "" }: { className?: string }) {
   const [on, setOn] = useState(false);
-  const [available, setAvailable] = useState(true);
+  const [available, setAvailable] = useState(false);
   const mountRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const fadeRef = useRef<number | null>(null);
@@ -98,7 +98,7 @@ export function AmbientAudio({ className = "" }: { className?: string }) {
       .then((YT) => {
         const mount = mountRef.current;
         if (disposed || !mount) return;
-        playerRef.current = new YT.Player(mount, {
+        new YT.Player(mount, {
           videoId: VIDEO_ID,
           playerVars: {
             autoplay: 0,
@@ -112,8 +112,10 @@ export function AmbientAudio({ className = "" }: { className?: string }) {
           },
           events: {
             onReady: ({ target }) => {
+              playerRef.current = target;
               target.setPlaybackQuality("small");
               target.setVolume(0);
+              setAvailable(true);
             },
           },
         });
