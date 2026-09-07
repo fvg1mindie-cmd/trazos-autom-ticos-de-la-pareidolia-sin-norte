@@ -1,117 +1,169 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
-/**
- * Campo binaural armónico generado con Web Audio.
- * Cada nota del acorde La menor 9 suena como un par estéreo separado por 4 Hz:
- * el oído percibe armonía y, con auriculares, un pulso binaural suave.
- */
-const VOCES: { freq: number; gain: number; lfoHz: number }[] = [
-  { freq: 110, gain: 0.34, lfoHz: 0.035 }, // A2
-  { freq: 164.81, gain: 0.24, lfoHz: 0.043 }, // E3
-  { freq: 220, gain: 0.2, lfoHz: 0.051 }, // A3
-  { freq: 246.94, gain: 0.14, lfoHz: 0.039 }, // B3
-  { freq: 261.63, gain: 0.17, lfoHz: 0.047 }, // C4
-];
+const VIDEO_ID = "Q8JIO106JlM";
+const TARGET_VOLUME = 42;
+const FADE_DURATION = 2400;
+
+type YouTubePlayer = {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  setVolume: (volume: number) => void;
+  setPlaybackQuality: (quality: string) => void;
+  destroy: () => void;
+};
+
+type YouTubePlayerEvent = { target: YouTubePlayer };
+
+type YouTubeApi = {
+  Player: new (
+    element: HTMLElement,
+    options: {
+      videoId: string;
+      playerVars: Record<string, number | string>;
+      events: { onReady: (event: YouTubePlayerEvent) => void };
+    },
+  ) => YouTubePlayer;
+};
+
+declare global {
+  interface Window {
+    YT?: YouTubeApi;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+let apiPromise: Promise<YouTubeApi> | null = null;
+
+function loadYouTubeApi() {
+  if (window.YT) return Promise.resolve(window.YT);
+  if (apiPromise) return apiPromise;
+
+  apiPromise = new Promise<YouTubeApi>((resolve) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      previousReady?.();
+      if (window.YT) resolve(window.YT);
+    };
+
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  });
+
+  return apiPromise;
+}
 
 export function AmbientAudio({ className = "" }: { className?: string }) {
   const [on, setOn] = useState(false);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
+  const [available, setAvailable] = useState(true);
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
+  const fadeRef = useRef<number | null>(null);
+
+  function cancelFade() {
+    if (fadeRef.current !== null) {
+      window.cancelAnimationFrame(fadeRef.current);
+      fadeRef.current = null;
+    }
+  }
+
+  function fadeVolume(from: number, to: number, done?: () => void) {
+    cancelFade();
+    const player = playerRef.current;
+    if (!player) return;
+    const started = performance.now();
+
+    const frame = (now: number) => {
+      const progress = Math.min((now - started) / FADE_DURATION, 1);
+      player.setVolume(Math.round(from + (to - from) * progress));
+      if (progress < 1) {
+        fadeRef.current = window.requestAnimationFrame(frame);
+      } else {
+        fadeRef.current = null;
+        done?.();
+      }
+    };
+
+    fadeRef.current = window.requestAnimationFrame(frame);
+  }
 
   useEffect(() => {
+    let disposed = false;
+
+    void loadYouTubeApi()
+      .then((YT) => {
+        const mount = mountRef.current;
+        if (disposed || !mount) return;
+        playerRef.current = new YT.Player(mount, {
+          videoId: VIDEO_ID,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            loop: 1,
+            playlist: VIDEO_ID,
+            playsinline: 1,
+            rel: 0,
+          },
+          events: {
+            onReady: ({ target }) => {
+              target.setPlaybackQuality("small");
+              target.setVolume(0);
+            },
+          },
+        });
+      })
+      .catch(() => setAvailable(false));
+
     return () => {
-      ctxRef.current?.close().catch(() => {});
-      ctxRef.current = null;
+      disposed = true;
+      cancelFade();
+      playerRef.current?.destroy();
+      playerRef.current = null;
     };
   }, []);
 
-  async function start() {
-    const AC =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    let ctx = ctxRef.current;
-    if (!ctx) {
-      ctx = new AC();
-      ctxRef.current = ctx;
-      const master = ctx.createGain();
-      master.gain.value = 0;
-      master.connect(ctx.destination);
-      gainRef.current = master;
-
-      // Cada nota se duplica en los canales izquierdo y derecho con 4 Hz
-      // de diferencia. El conjunto forma un acorde, no un tono aislado.
-      VOCES.forEach((v, i) => {
-        const voz = ctx!.createGain();
-        voz.gain.value = v.gain;
-        const lfo = ctx!.createOscillator();
-        lfo.frequency.value = v.lfoHz;
-        const lfoGain = ctx!.createGain();
-        lfoGain.gain.value = v.gain * 0.22;
-        lfo.connect(lfoGain).connect(voz.gain);
-        voz.connect(master);
-
-        [-1, 1].forEach((pan) => {
-          const osc = ctx!.createOscillator();
-          osc.type = i < 2 ? "sine" : "triangle";
-          osc.frequency.value = v.freq + (pan === 1 ? 4 : 0);
-          const filtro = ctx!.createBiquadFilter();
-          filtro.type = "lowpass";
-          filtro.frequency.value = 720;
-          filtro.Q.value = 0.35;
-          const canal = ctx!.createGain();
-          canal.gain.value = 0.5;
-          const panner = ctx!.createStereoPanner();
-          panner.pan.value = pan;
-          osc.connect(filtro).connect(canal).connect(panner).connect(voz);
-          osc.start();
-        });
-        lfo.start();
-      });
-    }
-    await ctx.resume();
-    const g = gainRef.current;
-    if (g) {
-      const t = ctx.currentTime;
-      g.gain.cancelScheduledValues(t);
-      g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.linearRampToValueAtTime(0.16, t + 3); // fade-in
-    }
-  }
-
-  function stop() {
-    const ctx = ctxRef.current;
-    const g = gainRef.current;
-    if (!ctx || !g) return;
-    const t = ctx.currentTime;
-    g.gain.cancelScheduledValues(t);
-    g.gain.setValueAtTime(g.gain.value, t);
-    g.gain.linearRampToValueAtTime(0.0001, t + 2); // fade-out
-  }
-
   function toggle() {
+    const player = playerRef.current;
+    if (!player) return;
+
     if (on) {
-      stop();
+      fadeVolume(TARGET_VOLUME, 0, () => player.pauseVideo());
       setOn(false);
-    } else {
-      void start();
-      setOn(true);
+      return;
     }
+
+    player.setVolume(0);
+    player.playVideo();
+    fadeVolume(0, TARGET_VOLUME);
+    setOn(true);
   }
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-pressed={on}
-      aria-label={on ? "Silenciar el ambiente sonoro" : "Activar el ambiente sonoro"}
-      title={on ? "Silenciar ambiente" : "Ambiente armónico"}
-      className={`rounded-full border border-border/70 bg-card/70 p-2.5 backdrop-blur transition-colors ${
-        on ? "border-neon/50 text-neon" : "text-muted-foreground hover:text-primary"
-      } ${className}`}
-    >
-      {on ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-    </button>
+    <>
+      <div
+        ref={mountRef}
+        className="pointer-events-none fixed -left-[9999px] top-0 h-px w-px overflow-hidden"
+        aria-hidden="true"
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={!available}
+        aria-pressed={on}
+        aria-label={on ? "Silenciar la música ambiental" : "Activar la música ambiental"}
+        title={on ? "Silenciar música" : "Música ambiental de neowake en YouTube"}
+        className={`rounded-full border border-border/70 bg-card/70 p-2.5 backdrop-blur transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+          on ? "border-neon/50 text-neon" : "text-muted-foreground hover:text-primary"
+        } ${className}`}
+      >
+        {on ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+      </button>
+    </>
   );
 }
