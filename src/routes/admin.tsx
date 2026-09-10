@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { LogOut, Trash2, Upload } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { adminUnlock } from "@/lib/admin-gate.functions";
-import { STORAGE_PREFIX } from "@/lib/artworks";
+import { STORAGE_PREFIX, adminArtworksQueryOptions } from "@/lib/artworks";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -222,7 +222,7 @@ function parseImpresiones(txt: string) {
 function AdminPanel({ session }: { session: Session }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [obras, setObras] = useState<AdminObra[]>([]);
+  const { data: obras = [] } = useQuery(adminArtworksQueryOptions);
   const [file, setFile] = useState<File | null>(null);
   const [titulo, setTitulo] = useState("");
   const [tecnica, setTecnica] = useState("");
@@ -237,17 +237,6 @@ function AdminPanel({ session }: { session: Session }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function load() {
-    const { data } = await supabase
-      .from("artworks")
-      .select("id, slug, catalogo, titulo, imagen_url, orden, original_vendido")
-      .order("orden", { ascending: true });
-    setObras((data ?? []) as AdminObra[]);
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
@@ -296,7 +285,6 @@ function AdminPanel({ session }: { session: Session }) {
       setPrecioMarco("");
       setPrecioMagnetico("");
       setImpresiones("");
-      await load();
       await queryClient.invalidateQueries({ queryKey: ["artworks"] });
       router.invalidate();
     } catch (err) {
@@ -315,7 +303,6 @@ function AdminPanel({ session }: { session: Session }) {
     )
       return;
     await supabase.from("artworks").update({ original_vendido: nuevo }).eq("id", obra.id);
-    await load();
     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
     router.invalidate();
   }
@@ -328,7 +315,6 @@ function AdminPanel({ session }: { session: Session }) {
         .from("obras")
         .remove([obra.imagen_url.slice(STORAGE_PREFIX.length)]);
     }
-    await load();
     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
   }
 
