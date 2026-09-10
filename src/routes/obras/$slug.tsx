@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, RotateCw } from "lucide-react";
 import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
 import { RotateViewer } from "@/components/RotateViewer";
 import { AmbientAudio } from "@/components/AmbientAudio";
