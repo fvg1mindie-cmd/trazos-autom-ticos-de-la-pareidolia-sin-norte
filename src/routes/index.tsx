@@ -95,10 +95,11 @@ function Index() {
             </p>
             <div className="space-y-5 text-[15px] leading-relaxed text-muted-foreground">
               <p>
-                La pareidolia es esa insistencia del ojo en encontrar rostros
-                donde solo hay mancha. Acá el trazo llega primero, automático,
-                sin intención de decir nada; la figura aparece después, y
-                aparece en vos.
+                La pareidolia es esa insistencia del ojo en encontrar formas
+                donde solo hay mancha: un rostro, un paisaje, un animal, unos
+                ojos, un objeto que no estaba. Acá el trazo llega primero,
+                automático, sin intención de decir nada; la figura aparece
+                después, y aparece en vos.
               </p>
               <p>
                 Por eso cada obra se puede girar 360° y detener en cualquier
