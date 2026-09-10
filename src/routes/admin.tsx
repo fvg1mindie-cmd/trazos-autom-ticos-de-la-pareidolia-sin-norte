@@ -3,7 +3,9 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { LogOut, Trash2, Upload } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { adminUnlock } from "@/lib/admin-gate.functions";
 import { STORAGE_PREFIX } from "@/lib/artworks";
 
 export const Route = createFileRoute("/admin")({
