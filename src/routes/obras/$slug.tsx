@@ -59,6 +59,9 @@ function ObraPage() {
 
   const fade = (visible: boolean) =>
     `transition-opacity duration-500 ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`;
+  // La ficha/tienda solo ocupa espacio cuando está visible; oculta no genera scroll en blanco.
+  const fichaShell = (visible: boolean) =>
+    visible ? "" : "hidden";
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
