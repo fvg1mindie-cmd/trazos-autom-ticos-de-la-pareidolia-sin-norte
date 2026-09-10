@@ -54,6 +54,13 @@ function ObraPage() {
   const obra = findArtwork(lista, slug);
   const { prev, next } = findNeighbors(lista, slug);
   const [uiVisible, setUiVisible] = useState(false);
+  // Aviso sutil de que la obra se puede girar; se oculta solo o al primer gesto.
+  const [hint, setHint] = useState(true);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setHint(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [slug]);
 
   if (!obra) return <Aviso texto="Esta obra no está en el archivo" />;
 
@@ -66,7 +73,10 @@ function ObraPage() {
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
       {/* Lienzo inmersivo */}
-      <section className="relative h-[100svh] w-full">
+      <section
+        className="relative h-[100svh] w-full"
+        onPointerDown={() => setHint(false)}
+      >
         <RotateViewer
           src={obra.imagen}
           alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
