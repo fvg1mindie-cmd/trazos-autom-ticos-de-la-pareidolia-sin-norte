@@ -148,7 +148,7 @@ export function RotateViewer({
         {src ? (
           <div
             className={`flex w-full items-center justify-center ${
-              fill ? "h-full p-0" : "aspect-square p-4"
+              fill ? "h-full px-4 pt-16 pb-10" : "aspect-square p-4"
             }`}
           >
             <img
