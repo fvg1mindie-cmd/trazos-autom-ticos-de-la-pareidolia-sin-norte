@@ -100,6 +100,19 @@ function ObraPage() {
           </span>
         </div>
 
+        {/* Indicador sutil de giro */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center transition-opacity duration-700 ${
+            hint && !uiVisible ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={!hint}
+        >
+          <span className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-2 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
+            <RotateCw className="h-3.5 w-3.5 animate-[spin_3s_linear_infinite] text-neon" />
+            Arrastrá para girar la obra
+          </span>
+        </div>
+
         {/* Toggles siempre disponibles */}
         <div className="absolute right-5 bottom-6 z-30 flex flex-col gap-2">
           <AmbientAudio />
