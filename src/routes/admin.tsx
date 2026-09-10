@@ -108,9 +108,8 @@ function AdminPage() {
 }
 
 function AuthForm() {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const unlock = useServerFn(adminUnlock);
+  const [pin, setPin] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -118,79 +117,48 @@ function AuthForm() {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMsg(error.message);
-    } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/admin` },
-      });
-      setMsg(error ? error.message : "Revisá tu correo para confirmar la cuenta.");
+    try {
+      const res = await unlock({ data: { pin } });
+      if (!res.ok || !("tokenHash" in res) || !res.tokenHash) {
+        setMsg("Clave incorrecta.");
+      } else {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: res.tokenHash,
+          type: "email",
+        });
+        if (error) setMsg(error.message);
+      }
+    } catch {
+      setMsg("No se pudo entrar. Probá de nuevo.");
     }
     setBusy(false);
   }
 
   return (
     <div className="mx-auto max-w-sm">
-      <h1 className="font-display text-3xl font-light tracking-tight">
-        {mode === "login" ? "Entrar al panel" : "Crear cuenta"}
-      </h1>
+      <h1 className="font-display text-3xl font-light tracking-tight">Entrar al panel</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Escribí tu clave. La sesión queda guardada en este dispositivo.
+      </p>
       <form onSubmit={submit} className="mt-8 space-y-4">
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Correo"
-          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
-        />
         <input
           type="password"
           required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Contraseña"
-          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+          autoFocus
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          placeholder="Clave"
+          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-primary"
         />
         <button
           type="submit"
           disabled={busy}
           className="w-full rounded-lg bg-primary px-4 py-3 font-mono text-[11px] tracking-[0.25em] text-primary-foreground uppercase transition-opacity disabled:opacity-50"
         >
-          {busy ? "…" : mode === "login" ? "Entrar" : "Registrarme"}
+          {busy ? "…" : "Entrar"}
         </button>
         {msg && <p className="text-sm text-neon">{msg}</p>}
       </form>
-      <div className="mt-6 flex flex-col gap-3">
-        <button
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          className="text-left font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
-        >
-          {mode === "login" ? "¿Primera vez? Crear cuenta" : "Ya tengo cuenta"}
-        </button>
-        <button
-          onClick={async () => {
-            if (!email) {
-              setMsg("Escribí tu correo arriba y tocá de nuevo.");
-              return;
-            }
-            setBusy(true);
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: `${window.location.origin}/admin`,
-            });
-            setMsg(
-              error ? error.message : "Te enviamos un enlace para cambiar la contraseña.",
-            );
-            setBusy(false);
-          }}
-          className="text-left font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-neon"
-        >
-          Olvidé mi contraseña
-        </button>
-      </div>
     </div>
   );
 }
