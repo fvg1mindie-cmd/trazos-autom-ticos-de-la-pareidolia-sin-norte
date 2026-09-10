@@ -123,6 +123,33 @@ export const artworksQueryOptions = queryOptions({
   staleTime: 60_000,
 });
 
+export interface AdminArtwork {
+  id: string;
+  slug: string;
+  catalogo: string;
+  titulo: string;
+  imagen_url: string;
+  orden: number;
+  original_vendido: boolean;
+}
+
+async function fetchAdminArtworks(): Promise<AdminArtwork[]> {
+  const { data, error } = await supabase
+    .from("artworks")
+    .select(
+      "id, slug, catalogo, titulo, imagen_url, orden, original_vendido",
+    )
+    .order("orden", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as AdminArtwork[];
+}
+
+export const adminArtworksQueryOptions = queryOptions({
+  queryKey: ["artworks", "admin"],
+  queryFn: fetchAdminArtworks,
+  staleTime: 30_000,
+});
+
 export function findArtwork(list: Artwork[], slug: string): Artwork | undefined {
   return list.find((a) => a.slug === slug);
 }
