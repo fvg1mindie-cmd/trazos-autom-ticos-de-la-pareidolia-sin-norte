@@ -75,9 +75,8 @@ function Index() {
             sin norte
           </h1>
           <p className="rise-in mt-10 max-w-md text-[15px] leading-relaxed text-muted-foreground text-pretty">
-            Dibujos que se hacen solos. Lo que la mano no buscó y que la mirada,
-            a pesar de todo, vuelve a encontrar: un rostro, una nube, una boca
-            que no estaba.
+            Movimientos espontáneos del trazo que despiertan figuras en el
+            observador. La ilusión de encontrar sentido en lo impredecible.
           </p>
           <div className="hairline-glow mt-12 h-px w-full" />
         </div>
