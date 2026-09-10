@@ -108,7 +108,7 @@ function ObraPage() {
       {/* Ficha + tienda */}
       <section
         id="ficha"
-        className={`nebula-bg border-t border-border/60 ${fade(uiVisible)}`}
+        className={`nebula-bg border-t border-border/60 ${fade(uiVisible)} ${fichaShell(uiVisible)}`}
         aria-hidden={!uiVisible}
       >
         <div className="mx-auto max-w-2xl px-6 py-16">
