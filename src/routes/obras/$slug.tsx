@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, RotateCw } from "lucide-react";
 import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
 import { RotateViewer } from "@/components/RotateViewer";
 import { AmbientAudio } from "@/components/AmbientAudio";
@@ -54,6 +54,13 @@ function ObraPage() {
   const obra = findArtwork(lista, slug);
   const { prev, next } = findNeighbors(lista, slug);
   const [uiVisible, setUiVisible] = useState(false);
+  // Aviso sutil de que la obra se puede girar; se oculta solo o al primer gesto.
+  const [hint, setHint] = useState(true);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setHint(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [slug]);
 
   if (!obra) return <Aviso texto="Esta obra no está en el archivo" />;
 
@@ -66,7 +73,10 @@ function ObraPage() {
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
       {/* Lienzo inmersivo */}
-      <section className="relative h-[100svh] w-full">
+      <section
+        className="relative h-[100svh] w-full"
+        onPointerDown={() => setHint(false)}
+      >
         <RotateViewer
           src={obra.imagen}
           alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
@@ -87,6 +97,19 @@ function ObraPage() {
           </Link>
           <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
             {obra.catalogo}
+          </span>
+        </div>
+
+        {/* Indicador sutil de giro */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center transition-opacity duration-700 ${
+            hint && !uiVisible ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={!hint}
+        >
+          <span className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-2 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
+            <RotateCw className="h-3.5 w-3.5 animate-[spin_3s_linear_infinite] text-neon" />
+            Arrastrá para girar la obra
           </span>
         </div>
 
