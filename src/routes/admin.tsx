@@ -327,12 +327,13 @@ function AdminPanel({ session }: { session: Session }) {
       imagen_url: string;
     }[];
     for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
       const num = String(i + 1).padStart(2, "0");
       const newSlug = `obra-${num}`;
       const newCatalogo = `TA-${num}`;
-      let newImagenUrl = rows[i].imagen_url;
-      if (rows[i].imagen_url.startsWith(STORAGE_PREFIX)) {
-        const oldPath = rows[i].imagen_url.slice(STORAGE_PREFIX.length);
+      let newImagenUrl = row.imagen_url;
+      if (row.imagen_url.startsWith(STORAGE_PREFIX)) {
+        const oldPath = row.imagen_url.slice(STORAGE_PREFIX.length);
         const ext = (oldPath.split(".").pop() || "jpg").toLowerCase();
         const newPath = `${newSlug}.${ext}`;
         if (oldPath !== newPath) {
@@ -348,7 +349,7 @@ function AdminPanel({ session }: { session: Session }) {
           orden: i + 1,
           imagen_url: newImagenUrl,
         })
-        .eq("id", rows[i].id);
+        .eq("id", row.id);
     }
 
     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
