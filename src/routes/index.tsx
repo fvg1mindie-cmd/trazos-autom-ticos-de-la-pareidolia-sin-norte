@@ -52,6 +52,9 @@ function Index() {
             <a href="#muro" className="text-muted-foreground transition-colors hover:text-neon">
               Muro
             </a>
+            <a href="#cuerpo" className="text-muted-foreground transition-colors hover:text-neon">
+              Mente
+            </a>
             <a href="#nota" className="text-muted-foreground transition-colors hover:text-neon">
               Nota
             </a>
@@ -107,6 +110,101 @@ function Index() {
                 posición en que quiere verla. El dibujo lo hice yo; la imagen la
                 hacés vos, y podés cambiarla cuando quieras.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* La pareidolia en el cuerpo y la mente */}
+      <section id="cuerpo" className="border-b border-border/60">
+        <div className="mx-auto max-w-5xl scroll-mt-20 px-6 py-16">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
+            La pareidolia en el cuerpo y la mente
+          </p>
+          <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-muted-foreground text-pretty">
+            La pareidolia es un fenómeno neurobiológico fascinante: el cerebro
+            procesa un estímulo visual impreciso y lo interpreta rápidamente como
+            una forma reconocible (generalmente un rostro o una figura).
+          </p>
+
+          <div className="mt-12 grid gap-12 md:grid-cols-2">
+            <div>
+              <h3 className="font-display text-xl font-light tracking-tight">
+                Lo que ocurre en el cuerpo y el cerebro
+              </h3>
+              <ul className="mt-6 space-y-5 text-sm leading-relaxed text-muted-foreground">
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Activación cerebral veloz
+                  </span>
+                  <p className="mt-1">
+                    Ocurre en el área fusiforme de rostros (una región del lóbulo
+                    temporal). El cerebro procesa la forma en apenas 130 a 165
+                    milisegundos, interpretando una cara antes de que te des cuenta
+                    conscientemente.
+                  </p>
+                </li>
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Respuesta del sistema nervioso
+                  </span>
+                  <p className="mt-1">
+                    Si la figura percibida sugiere amenaza o presencia humana, la
+                    amígdala activa una sutil alerta previa, aumentando brevemente
+                    la atención y la frecuencia cardíaca.
+                  </p>
+                </li>
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Descarga de dopamina
+                  </span>
+                  <p className="mt-1">
+                    Al resolver el {"\""}enigma{"\""} visual e identificar la
+                    forma, el sistema de recompensa libera una pequeña dosis de
+                    dopamina, generando curiosidad, sorpresa o agrado.
+                  </p>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-display text-xl font-light tracking-tight">
+                Efectos en la salud física y mental
+              </h3>
+              <ul className="mt-6 space-y-5 text-sm leading-relaxed text-muted-foreground">
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Mecanismo evolutivo de supervivencia
+                  </span>
+                  <p className="mt-1">
+                    No es una alteración ni un fallo mental, sino un rasgo
+                    evolutivo clave. A los ancestros les resultaba más útil
+                    {"\""}ver{"\""} una cara o amenaza donde no la había, que pasar
+                    por alto a un depredador.
+                  </p>
+                </li>
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Estimulación de la empatía y la creatividad
+                  </span>
+                  <p className="mt-1">
+                    Ver rostros activa neuronas espejo. En el ámbito artístico,
+                    fomenta la flexibilidad cognitiva y ayuda a reducir el estrés
+                    al conectar con el entorno desde el juego y la imaginación.
+                  </p>
+                </li>
+                <li>
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-neon uppercase">
+                    Indicador neurológico
+                  </span>
+                  <p className="mt-1">
+                    Es un signo de que las redes de reconocimiento de patrones
+                    funcionan correctamente. Solo se evalúa en clínica cuando va
+                    acompañado de alucinaciones severas o angustia, lo cual no
+                    ocurre en el arte ni en la cotidianeidad.
+                  </p>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

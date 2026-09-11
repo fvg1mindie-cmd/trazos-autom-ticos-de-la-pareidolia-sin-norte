@@ -315,6 +315,43 @@ function AdminPanel({ session }: { session: Session }) {
         .from("obras")
         .remove([obra.imagen_url.slice(STORAGE_PREFIX.length)]);
     }
+
+    // Reenumerar para que queden secuenciales TA-01, TA-02, … sin saltos.
+    const { data: rest } = await supabase
+      .from("artworks")
+      .select("id, slug, imagen_url")
+      .order("orden", { ascending: true });
+    const rows = (rest ?? []) as {
+      id: string;
+      slug: string;
+      imagen_url: string;
+    }[];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
+      const num = String(i + 1).padStart(2, "0");
+      const newSlug = `obra-${num}`;
+      const newCatalogo = `TA-${num}`;
+      let newImagenUrl = row.imagen_url;
+      if (row.imagen_url.startsWith(STORAGE_PREFIX)) {
+        const oldPath = row.imagen_url.slice(STORAGE_PREFIX.length);
+        const ext = (oldPath.split(".").pop() || "jpg").toLowerCase();
+        const newPath = `${newSlug}.${ext}`;
+        if (oldPath !== newPath) {
+          await supabase.storage.from("obras").move(oldPath, newPath);
+          newImagenUrl = `${STORAGE_PREFIX}${newPath}`;
+        }
+      }
+      await supabase
+        .from("artworks")
+        .update({
+          slug: newSlug,
+          catalogo: newCatalogo,
+          orden: i + 1,
+          imagen_url: newImagenUrl,
+        })
+        .eq("id", row.id);
+    }
+
     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
   }
 
