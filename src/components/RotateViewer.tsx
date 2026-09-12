@@ -68,12 +68,16 @@ export function RotateViewer({
   // Enganchado a mano (en vez de usar onWheel de React) porque React registra
   // ese evento como "pasivo": el preventDefault() no llega a tiempo y el
   // navegador termina scrolleando la página en vez de dejar que achiquemos/
-  // agrandemos la obra (pasa sobre todo con el gesto de pellizcar en el
-  // touchpad de una notebook, que el navegador traduce como "wheel").
+  // agrandemos la obra.
+  // Solo interceptamos el gesto de "pellizcar" del touchpad: los navegadores
+  // lo mandan como wheel con ctrlKey=true. Un scroll normal de dos dedos
+  // (sin pellizcar) no trae esa marca, y lo dejamos pasar para que la página
+  // scrollee como siempre.
   useEffect(() => {
     const el = frameRef.current;
     if (!el) return;
     const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
       e.preventDefault();
       changeZoom(e.deltaY < 0 ? 0.2 : -0.2);
     };
