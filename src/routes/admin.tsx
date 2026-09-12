@@ -6,7 +6,12 @@ import { LogOut, Trash2, Upload } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { adminUnlock } from "@/lib/admin-gate.functions";
-import { STORAGE_PREFIX, adminArtworksQueryOptions } from "@/lib/artworks";
+import {
+  STORAGE_PREFIX,
+  adminArtworksQueryOptions,
+  type AdminArtwork,
+  type Impresion,
+} from "@/lib/artworks";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -18,16 +23,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-interface AdminObra {
-  id: string;
-  slug: string;
-  catalogo: string;
-  titulo: string;
-  imagen_url: string;
-  imagenes: string[];
-  orden: number;
-  original_vendido: boolean;
-}
+type AdminObra = AdminArtwork;
 
 function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -61,7 +57,6 @@ function AdminPage() {
       });
   }, [session]);
 
-
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -89,13 +84,12 @@ function AdminPage() {
           <NewPasswordForm onDone={() => setRecovery(false)} />
         ) : isAdmin ? (
           <AdminPanel session={session} />
-
         ) : (
           <div className="rounded-2xl border border-border/70 bg-card p-8 text-center">
             <p className="font-display text-2xl font-light">Cuenta sin permisos de carga</p>
             <p className="mt-3 text-sm text-muted-foreground">
-              Tu cuenta ({session.user.email}) está creada. Avisame por el chat y te
-              habilito como administrador para subir obras.
+              Tu cuenta ({session.user.email}) está creada. Avisame por el chat y te habilito como
+              administrador para subir obras.
             </p>
             <button
               onClick={() => supabase.auth.signOut()}
@@ -206,7 +200,6 @@ function NewPasswordForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-
 /** "A4=80, A3=120" -> [{escala:"A4",precio:80}, ...] */
 function parseImpresiones(txt: string) {
   return txt
@@ -218,6 +211,161 @@ function parseImpresiones(txt: string) {
       return { escala: (escala ?? "").trim(), precio: Number((precio ?? "0").trim()) };
     })
     .filter((i) => i.escala !== "" && Number.isFinite(i.precio));
+}
+
+/** [{escala:"A4",precio:80}, ...] -> "A4=80, A3=120" */
+function serializeImpresiones(list: Impresion[]): string {
+  return list.map((i) => `${i.escala}=${i.precio}`).join(", ");
+}
+
+function EditObraForm({
+  obra,
+  onSaved,
+  onCancel,
+}: {
+  obra: AdminObra;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const [titulo, setTitulo] = useState(obra.titulo);
+  const [tecnica, setTecnica] = useState(obra.tecnica);
+  const [soporte, setSoporte] = useState(obra.soporte);
+  const [formato, setFormato] = useState(obra.formato);
+  const [anio, setAnio] = useState(obra.anio ? String(obra.anio) : "");
+  const [descripcion, setDescripcion] = useState(obra.descripcion);
+  const [precioOriginal, setPrecioOriginal] = useState(
+    obra.precio_original !== null ? String(obra.precio_original) : "",
+  );
+  const [precioMarco, setPrecioMarco] = useState(String(obra.precio_marco ?? 0));
+  const [precioMagnetico, setPrecioMagnetico] = useState(String(obra.precio_marco_magnetico ?? 0));
+  const [impresiones, setImpresiones] = useState(serializeImpresiones(obra.impresiones));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setMsg(null);
+    try {
+      const { error } = await supabase
+        .from("artworks")
+        .update({
+          titulo: titulo.trim() || obra.titulo,
+          tecnica,
+          soporte,
+          formato,
+          anio: anio ? Number(anio) : null,
+          descripcion,
+          precio_original: precioOriginal ? Number(precioOriginal) : null,
+          precio_marco: precioMarco ? Number(precioMarco) : 0,
+          precio_marco_magnetico: precioMagnetico ? Number(precioMagnetico) : 0,
+          impresiones: parseImpresiones(impresiones),
+        })
+        .eq("id", obra.id);
+      if (error) throw error;
+      onSaved();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "No se pudo guardar");
+      setBusy(false);
+    }
+  }
+
+  const inputCls =
+    "w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-primary";
+
+  return (
+    <form
+      onSubmit={save}
+      className="mt-3 space-y-3 rounded-xl border border-border/70 bg-card/40 p-4"
+    >
+      <input
+        value={titulo}
+        onChange={(e) => setTitulo(e.target.value)}
+        placeholder="Título"
+        className={inputCls}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          value={tecnica}
+          onChange={(e) => setTecnica(e.target.value)}
+          placeholder="Técnica"
+          className={inputCls}
+        />
+        <input
+          value={soporte}
+          onChange={(e) => setSoporte(e.target.value)}
+          placeholder="Soporte"
+          className={inputCls}
+        />
+        <input
+          value={formato}
+          onChange={(e) => setFormato(e.target.value)}
+          placeholder="Formato (ej. 30 × 40 cm)"
+          className={inputCls}
+        />
+        <input
+          value={anio}
+          onChange={(e) => setAnio(e.target.value)}
+          placeholder="Año"
+          inputMode="numeric"
+          className={inputCls}
+        />
+      </div>
+      <textarea
+        value={descripcion}
+        onChange={(e) => setDescripcion(e.target.value)}
+        placeholder="Descripción"
+        rows={3}
+        className={inputCls}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          value={precioOriginal}
+          onChange={(e) => setPrecioOriginal(e.target.value)}
+          placeholder="Precio del original"
+          inputMode="numeric"
+          className={inputCls}
+        />
+        <input
+          value={precioMarco}
+          onChange={(e) => setPrecioMarco(e.target.value)}
+          placeholder="Extra enmarcado tradicional"
+          inputMode="numeric"
+          className={inputCls}
+        />
+        <input
+          value={precioMagnetico}
+          onChange={(e) => setPrecioMagnetico(e.target.value)}
+          placeholder="Extra marco magnético"
+          inputMode="numeric"
+          className={inputCls}
+        />
+        <input
+          value={impresiones}
+          onChange={(e) => setImpresiones(e.target.value)}
+          placeholder="Impresiones: A4=80, A3=120"
+          className={inputCls}
+        />
+      </div>
+      <div className="flex items-center gap-4">
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-lg bg-primary px-4 py-2.5 font-mono text-[11px] tracking-[0.25em] text-primary-foreground uppercase transition-opacity disabled:opacity-50"
+        >
+          {busy ? "Guardando…" : "Guardar cambios"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-foreground"
+        >
+          Cancelar
+        </button>
+        {msg && <p className="text-sm text-neon">{msg}</p>}
+      </div>
+    </form>
+  );
 }
 
 function AdminPanel({ session }: { session: Session }) {
@@ -238,7 +386,7 @@ function AdminPanel({ session }: { session: Session }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
-
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
@@ -326,7 +474,9 @@ function AdminPanel({ session }: { session: Session }) {
       const imagenes = [...existing, ...additions];
       const { error } = await supabase.from("artworks").update({ imagenes }).eq("id", obra.id);
       if (error) throw error;
-      setMsg(`✓ ${additions.length} foto${additions.length === 1 ? "" : "s"} agregada${additions.length === 1 ? "" : "s"} a ${obra.titulo}`);
+      setMsg(
+        `✓ ${additions.length} foto${additions.length === 1 ? "" : "s"} agregada${additions.length === 1 ? "" : "s"} a ${obra.titulo}`,
+      );
       await queryClient.invalidateQueries({ queryKey: ["artworks"] });
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "No se pudieron agregar las fotos");
@@ -443,10 +593,31 @@ function AdminPanel({ session }: { session: Session }) {
             className={inputCls}
           />
           <div className="grid grid-cols-2 gap-4">
-            <input value={tecnica} onChange={(e) => setTecnica(e.target.value)} placeholder="Técnica" className={inputCls} />
-            <input value={soporte} onChange={(e) => setSoporte(e.target.value)} placeholder="Soporte" className={inputCls} />
-            <input value={formato} onChange={(e) => setFormato(e.target.value)} placeholder="Formato (ej. 30 × 40 cm)" className={inputCls} />
-            <input value={anio} onChange={(e) => setAnio(e.target.value)} placeholder="Año" inputMode="numeric" className={inputCls} />
+            <input
+              value={tecnica}
+              onChange={(e) => setTecnica(e.target.value)}
+              placeholder="Técnica"
+              className={inputCls}
+            />
+            <input
+              value={soporte}
+              onChange={(e) => setSoporte(e.target.value)}
+              placeholder="Soporte"
+              className={inputCls}
+            />
+            <input
+              value={formato}
+              onChange={(e) => setFormato(e.target.value)}
+              placeholder="Formato (ej. 30 × 40 cm)"
+              className={inputCls}
+            />
+            <input
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+              placeholder="Año"
+              inputMode="numeric"
+              className={inputCls}
+            />
           </div>
           <textarea
             value={descripcion}
@@ -456,10 +627,33 @@ function AdminPanel({ session }: { session: Session }) {
             className={inputCls}
           />
           <div className="grid grid-cols-2 gap-4">
-            <input value={precioOriginal} onChange={(e) => setPrecioOriginal(e.target.value)} placeholder="Precio del original" inputMode="numeric" className={inputCls} />
-            <input value={precioMarco} onChange={(e) => setPrecioMarco(e.target.value)} placeholder="Extra enmarcado tradicional" inputMode="numeric" className={inputCls} />
-            <input value={precioMagnetico} onChange={(e) => setPrecioMagnetico(e.target.value)} placeholder="Extra marco magnético" inputMode="numeric" className={inputCls} />
-            <input value={impresiones} onChange={(e) => setImpresiones(e.target.value)} placeholder="Impresiones: A4=80, A3=120" className={inputCls} />
+            <input
+              value={precioOriginal}
+              onChange={(e) => setPrecioOriginal(e.target.value)}
+              placeholder="Precio del original"
+              inputMode="numeric"
+              className={inputCls}
+            />
+            <input
+              value={precioMarco}
+              onChange={(e) => setPrecioMarco(e.target.value)}
+              placeholder="Extra enmarcado tradicional"
+              inputMode="numeric"
+              className={inputCls}
+            />
+            <input
+              value={precioMagnetico}
+              onChange={(e) => setPrecioMagnetico(e.target.value)}
+              placeholder="Extra marco magnético"
+              inputMode="numeric"
+              className={inputCls}
+            />
+            <input
+              value={impresiones}
+              onChange={(e) => setImpresiones(e.target.value)}
+              placeholder="Impresiones: A4=80, A3=120"
+              className={inputCls}
+            />
           </div>
           <button
             type="submit"
@@ -477,46 +671,67 @@ function AdminPanel({ session }: { session: Session }) {
         <h2 className="font-display text-2xl font-light tracking-tight">Obras cargadas</h2>
         <ul className="mt-6 divide-y divide-border/60">
           {obras.map((o) => (
-            <li key={o.id} className="flex items-center justify-between gap-4 py-3">
-              <div className="flex items-baseline gap-4">
-                <span className="font-mono text-[11px] tracking-[0.18em] text-neon/80">{o.catalogo}</span>
-                <Link
-                  to="/obras/$slug"
-                  params={{ slug: o.slug }}
-                  className="text-sm transition-colors hover:text-primary"
-                >
-                  {o.titulo}
-                </Link>
+            <li key={o.id} className="py-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-baseline gap-4">
+                  <span className="font-mono text-[11px] tracking-[0.18em] text-neon/80">
+                    {o.catalogo}
+                  </span>
+                  <Link
+                    to="/obras/$slug"
+                    params={{ slug: o.slug }}
+                    className="text-sm transition-colors hover:text-primary"
+                  >
+                    {o.titulo}
+                  </Link>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setEditingId(editingId === o.id ? null : o.id)}
+                    className={`font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${editingId === o.id ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                  >
+                    {editingId === o.id ? "Cerrar" : "Editar"}
+                  </button>
+                  <label className="cursor-pointer font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary">
+                    {addingTo === o.id ? "Subiendo…" : `+ Fotos (${o.imagenes.length || 1})`}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={addingTo !== null}
+                      className="hidden"
+                      onChange={(event) => {
+                        void addPhotos(o, event.target.files);
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => toggleVendida(o)}
+                    className={`font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${o.original_vendido ? "text-neon" : "text-muted-foreground hover:text-primary"}`}
+                  >
+                    {o.original_vendido ? "Vendida" : "Disponible"}
+                  </button>
+                  <button
+                    onClick={() => remove(o)}
+                    aria-label={`Borrar ${o.titulo}`}
+                    className="text-muted-foreground transition-colors hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-              <label className="cursor-pointer font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary">
-                {addingTo === o.id ? "Subiendo…" : `+ Fotos (${o.imagenes.length || 1})`}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  disabled={addingTo !== null}
-                  className="hidden"
-                  onChange={(event) => {
-                    void addPhotos(o, event.target.files);
-                    event.target.value = "";
+              {editingId === o.id && (
+                <EditObraForm
+                  obra={o}
+                  onCancel={() => setEditingId(null)}
+                  onSaved={async () => {
+                    setEditingId(null);
+                    await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+                    router.invalidate();
                   }}
                 />
-              </label>
-              <button
-                onClick={() => toggleVendida(o)}
-                className={`font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${o.original_vendido ? "text-neon" : "text-muted-foreground hover:text-primary"}`}
-              >
-                {o.original_vendido ? "Vendida" : "Disponible"}
-              </button>
-              <button
-                onClick={() => remove(o)}
-                aria-label={`Borrar ${o.titulo}`}
-                className="text-muted-foreground transition-colors hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-              </div>
+              )}
             </li>
           ))}
         </ul>
