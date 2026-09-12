@@ -13,10 +13,23 @@ import {
   type Impresion,
 } from "@/lib/artworks";
 
+/**
+ * Palabra secreta para poder ver el formulario de login.
+ * Cambiala por algo que solo vos sepas, y entrá siempre por:
+ * tusitio.com/admin?clave=LOQUEELIJAS
+ * Sin esa clave en la URL, cualquiera que escriba /admin ve una
+ * página "no encontrada" común — no hay ninguna pista de que existe un panel.
+ * Una vez que iniciaste sesión, no la necesitás más: la sesión queda guardada.
+ */
+const ADMIN_ENTRY_KEY = "cambiame";
+
 export const Route = createFileRoute("/admin")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    clave: typeof search.clave === "string" ? search.clave : undefined,
+  }),
   head: () => ({
     meta: [
-      { title: "Panel del artista — T·A·P·S·N" },
+      { title: "T·A·P·S·N" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -25,7 +38,24 @@ export const Route = createFileRoute("/admin")({
 
 type AdminObra = AdminArtwork;
 
+function PaginaNoEncontrada() {
+  return (
+    <div className="mx-auto max-w-sm text-center">
+      <p className="font-display text-3xl font-light tracking-tight">404</p>
+      <p className="mt-3 text-sm text-muted-foreground">Esta página no existe.</p>
+      <Link
+        to="/"
+        className="mt-6 inline-block font-mono text-[11px] tracking-[0.25em] text-primary uppercase"
+      >
+        ← Volver al muro
+      </Link>
+    </div>
+  );
+}
+
 function AdminPage() {
+  const { clave } = Route.useSearch();
+  const puedeVerLogin = clave === ADMIN_ENTRY_KEY;
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +86,16 @@ function AdminPage() {
         setLoading(false);
       });
   }, [session]);
+
+  const mostrarComo404 = !loading && !session && !puedeVerLogin;
+
+  if (mostrarComo404) {
+    return (
+      <div className="grain-overlay flex min-h-screen items-center justify-center bg-background text-foreground">
+        <PaginaNoEncontrada />
+      </div>
+    );
+  }
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
@@ -222,10 +262,12 @@ function EditObraForm({
   obra,
   onSaved,
   onCancel,
+  onRemovePhoto,
 }: {
   obra: AdminObra;
   onSaved: () => void;
   onCancel: () => void;
+  onRemovePhoto: (index: number) => void | Promise<void>;
 }) {
   const [titulo, setTitulo] = useState(obra.titulo);
   const [tecnica, setTecnica] = useState(obra.tecnica);
@@ -241,6 +283,29 @@ function EditObraForm({
   const [impresiones, setImpresiones] = useState(serializeImpresiones(obra.impresiones));
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Miniaturas de las fotos ya subidas (resuelve signed URLs del bucket privado).
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    async function resolve() {
+      const refs = obra.imagenes.length > 0 ? obra.imagenes : [obra.imagen_url];
+      const urls = await Promise.all(
+        refs.map(async (ref) => {
+          if (!ref.startsWith(STORAGE_PREFIX)) return ref;
+          const { data } = await supabase.storage
+            .from("obras")
+            .createSignedUrl(ref.slice(STORAGE_PREFIX.length), 3600);
+          return data?.signedUrl ?? "";
+        }),
+      );
+      if (!cancelled) setPhotoUrls(urls);
+    }
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [obra.imagenes, obra.imagen_url]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -347,6 +412,32 @@ function EditObraForm({
           className={inputCls}
         />
       </div>
+      <div>
+        <p className="mb-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+          Fotos ({photoUrls.length || 1})
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {photoUrls.map((url, index) => (
+            <div
+              key={`${url || "sin-url"}-${index}`}
+              className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border"
+            >
+              {url && <img src={url} alt="" className="h-full w-full object-cover" />}
+              <button
+                type="button"
+                onClick={() => onRemovePhoto(index)}
+                aria-label="Borrar esta foto"
+                className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-xs leading-none text-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Para agregar fotos, cerrá la edición y usá "+ Fotos" en el listado.
+        </p>
+      </div>
       <div className="flex items-center gap-4">
         <button
           type="submit"
@@ -366,6 +457,16 @@ function EditObraForm({
       </div>
     </form>
   );
+}
+
+/** El próximo código de catálogo nunca se reutiliza, aunque se borren obras anteriores. */
+function nextCodeNumber(obras: AdminObra[]): number {
+  const max = obras.reduce((acc, o) => {
+    const match = /^TA-(\d+)$/.exec(o.catalogo);
+    const n = match ? Number(match[1]) : 0;
+    return n > acc ? n : acc;
+  }, 0);
+  return max + 1;
 }
 
 function AdminPanel({ session }: { session: Session }) {
@@ -388,15 +489,28 @@ function AdminPanel({ session }: { session: Session }) {
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Previews de las fotos elegidas antes de subir.
+  const [previews, setPreviews] = useState<string[]>([]);
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [files]);
+
+  function removeFile(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function upload(e: React.FormEvent) {
     e.preventDefault();
     if (files.length === 0) return;
     setBusy(true);
     setMsg(null);
     try {
-      const next = obras.length + 1;
-      const num = String(next).padStart(2, "0");
+      const codeNum = nextCodeNumber(obras);
+      const num = String(codeNum).padStart(2, "0");
       const slug = `obra-${num}`;
+      const orden = obras.length + 1; // posición correlativa, al final del muro
       const imageRefs: string[] = [];
       for (let index = 0; index < files.length; index++) {
         const currentFile = files[index];
@@ -423,7 +537,7 @@ function AdminPanel({ session }: { session: Session }) {
         descripcion,
         imagen_url: mainImage,
         imagenes: imageRefs,
-        orden: next,
+        orden,
         precio_original: precioOriginal ? Number(precioOriginal) : null,
         precio_marco: precioMarco ? Number(precioMarco) : 0,
         precio_marco_magnetico: precioMagnetico ? Number(precioMagnetico) : 0,
@@ -484,6 +598,31 @@ function AdminPanel({ session }: { session: Session }) {
     setAddingTo(null);
   }
 
+  async function removePhoto(obra: AdminObra, index: number) {
+    const refs = obra.imagenes.length > 0 ? obra.imagenes : [obra.imagen_url];
+    if (refs.length <= 1) {
+      setMsg("La obra necesita al menos una foto — subí otra antes de borrar esta.");
+      return;
+    }
+    if (!confirm("¿Borrar esta foto? No se puede deshacer.")) return;
+    const target = refs[index];
+    const remaining = refs.filter((_, i) => i !== index);
+    try {
+      if (target?.startsWith(STORAGE_PREFIX)) {
+        await supabase.storage.from("obras").remove([target.slice(STORAGE_PREFIX.length)]);
+      }
+      const { error } = await supabase
+        .from("artworks")
+        .update({ imagenes: remaining, imagen_url: remaining[0] ?? obra.imagen_url })
+        .eq("id", obra.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+      router.invalidate();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "No se pudo borrar la foto");
+    }
+  }
+
   async function toggleVendida(obra: AdminObra) {
     const nuevo = !obra.original_vendido;
     if (
@@ -507,47 +646,20 @@ function AdminPanel({ session }: { session: Session }) {
       .map((ref) => ref.slice(STORAGE_PREFIX.length));
     if (storedPaths.length > 0) await supabase.storage.from("obras").remove(storedPaths);
 
-    // Reenumerar para que queden secuenciales TA-01, TA-02, … sin saltos.
+    // Reordenar la posición (orden) para que quede correlativa 1, 2, 3…
+    // El código de catálogo (TA-XX) y el slug de cada obra restante NO cambian:
+    // son permanentes, así los links a /obras/{slug} nunca se rompen.
     const { data: rest } = await supabase
       .from("artworks")
-      .select("id, slug, imagen_url, imagenes")
+      .select("id, orden")
       .order("orden", { ascending: true });
-    const rows = (rest ?? []) as {
-      id: string;
-      slug: string;
-      imagen_url: string;
-      imagenes: string[];
-    }[];
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row) continue;
-      const num = String(i + 1).padStart(2, "0");
-      const newSlug = `obra-${num}`;
-      const newCatalogo = `TA-${num}`;
-      const refs = row.imagenes.length > 0 ? row.imagenes : [row.imagen_url];
-      const renamedRefs: string[] = [];
-      for (const ref of refs) {
-        if (!ref.startsWith(STORAGE_PREFIX)) {
-          renamedRefs.push(ref);
-          continue;
-        }
-        const oldPath = ref.slice(STORAGE_PREFIX.length);
-        const newPath = oldPath.replace(/^obra-\d+/, newSlug);
-        if (oldPath !== newPath) await supabase.storage.from("obras").move(oldPath, newPath);
-        renamedRefs.push(`${STORAGE_PREFIX}${newPath}`);
-      }
-      const newImagenUrl = renamedRefs[0] ?? row.imagen_url;
-      await supabase
-        .from("artworks")
-        .update({
-          slug: newSlug,
-          catalogo: newCatalogo,
-          orden: i + 1,
-          imagen_url: newImagenUrl,
-          imagenes: renamedRefs,
-        })
-        .eq("id", row.id);
-    }
+    const rows = (rest ?? []) as { id: string; orden: number }[];
+    await Promise.all(
+      rows
+        .map((row, i) => ({ id: row.id, target: i + 1, changed: row.orden !== i + 1 }))
+        .filter((row) => row.changed)
+        .map((row) => supabase.from("artworks").update({ orden: row.target }).eq("id", row.id)),
+    );
 
     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
   }
@@ -586,6 +698,26 @@ function AdminPanel({ session }: { session: Session }) {
               onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
           </label>
+          {files.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {files.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border"
+                >
+                  <img src={previews[index]} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    aria-label="Quitar esta foto"
+                    className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-xs leading-none text-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <input
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
@@ -725,6 +857,7 @@ function AdminPanel({ session }: { session: Session }) {
                 <EditObraForm
                   obra={o}
                   onCancel={() => setEditingId(null)}
+                  onRemovePhoto={(index) => removePhoto(o, index)}
                   onSaved={async () => {
                     setEditingId(null);
                     await queryClient.invalidateQueries({ queryKey: ["artworks"] });
