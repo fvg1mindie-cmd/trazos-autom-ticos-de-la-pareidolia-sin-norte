@@ -60,6 +60,27 @@ export function RotateViewer({
     return (Math.atan2(dy, dx) * 180) / Math.PI;
   };
 
+  const changeZoom = useCallback(
+    (delta: number) => setZoom((value) => Math.min(4, Math.max(1, value + delta))),
+    [],
+  );
+
+  // Enganchado a mano (en vez de usar onWheel de React) porque React registra
+  // ese evento como "pasivo": el preventDefault() no llega a tiempo y el
+  // navegador termina scrolleando la página en vez de dejar que achiquemos/
+  // agrandemos la obra (pasa sobre todo con el gesto de pellizcar en el
+  // touchpad de una notebook, que el navegador traduce como "wheel").
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      changeZoom(e.deltaY < 0 ? 0.2 : -0.2);
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [changeZoom]);
+
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
@@ -113,7 +134,6 @@ export function RotateViewer({
 
   const step = (delta: number) => persist(Math.round(angle + delta));
   const reset = () => persist(0);
-  const changeZoom = (delta: number) => setZoom((value) => Math.min(4, Math.max(1, value + delta)));
 
   return (
     <div className={`select-none ${fill ? "flex h-full flex-col" : ""}`}>
@@ -134,11 +154,8 @@ export function RotateViewer({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onWheel={(e) => {
-          e.preventDefault();
-          changeZoom(e.deltaY < 0 ? 0.2 : -0.2);
-        }}
         onDoubleClick={reset}
+        style={{ touchAction: "none", overscrollBehavior: "contain" }}
         className={`touch-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           fill
             ? "flex-1 rounded-none"
