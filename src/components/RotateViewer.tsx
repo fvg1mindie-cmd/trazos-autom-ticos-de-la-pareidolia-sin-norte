@@ -145,8 +145,8 @@ export function RotateViewer({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onDoubleClick={reset}
-        style={{ touchAction: "none", overscrollBehavior: "contain" }}
-        className={`touch-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        style={{ touchAction: "pan-y", overscrollBehavior: "contain" }}
+        className={`touch-pan-y overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           fill
             ? "flex-1 rounded-none"
             : "ring-glow rounded-2xl border border-border/70 bg-card"
