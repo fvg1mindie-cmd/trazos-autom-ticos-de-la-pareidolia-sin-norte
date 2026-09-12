@@ -23,6 +23,7 @@ export type Database = {
           formato: string | null
           id: string
           imagen_url: string
+          imagenes: string[]
           impresiones: Json
           moneda: string
           orden: number
@@ -43,6 +44,7 @@ export type Database = {
           formato?: string | null
           id?: string
           imagen_url: string
+          imagenes?: string[]
           impresiones?: Json
           moneda?: string
           orden?: number
@@ -63,6 +65,7 @@ export type Database = {
           formato?: string | null
           id?: string
           imagen_url?: string
+          imagenes?: string[]
           impresiones?: Json
           moneda?: string
           orden?: number

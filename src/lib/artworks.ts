@@ -18,6 +18,8 @@ export interface Artwork {
   descripcion: string;
   /** URL lista para <img>: CDN de assets o URL firmada del storage. */
   imagen: string;
+  /** Todas las tomas disponibles; la primera funciona como portada. */
+  imagenes: string[];
   /** Tienda */
   precioOriginal: number | null;
   originalVendido: boolean;
@@ -37,6 +39,7 @@ interface ArtworkRow {
   formato: string | null;
   descripcion: string | null;
   imagen_url: string;
+  imagenes: unknown;
   precio_original: number | null;
   original_vendido: boolean | null;
   impresiones: unknown;
@@ -50,7 +53,7 @@ const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 año
 export const STORAGE_PREFIX = "storage:";
 
 const SELECT_COLS =
-  "slug, catalogo, titulo, anio, tecnica, soporte, formato, descripcion, imagen_url, precio_original, original_vendido, impresiones, precio_marco, precio_marco_magnetico, moneda";
+  "slug, catalogo, titulo, anio, tecnica, soporte, formato, descripcion, imagen_url, imagenes, precio_original, original_vendido, impresiones, precio_marco, precio_marco_magnetico, moneda";
 
 function parseImpresiones(value: unknown): Impresion[] {
   if (!Array.isArray(value)) return [];
@@ -74,15 +77,21 @@ async function fetchArtworks(): Promise<Artwork[]> {
   const rows = (data ?? []) as unknown as ArtworkRow[];
 
   // Resolver URLs firmadas para imágenes guardadas en el bucket privado.
-  const stored = rows
-    .map((r, i) =>
-      r.imagen_url.startsWith(STORAGE_PREFIX)
-        ? { i, path: r.imagen_url.slice(STORAGE_PREFIX.length) }
-        : null,
-    )
-    .filter((s): s is { i: number; path: string } => s !== null);
+  const imageRefs = rows.map((row) => {
+    const additional = Array.isArray(row.imagenes)
+      ? row.imagenes.filter((value): value is string => typeof value === "string" && value.length > 0)
+      : [];
+    return additional.length > 0 ? additional : [row.imagen_url];
+  });
+  const stored = imageRefs.flatMap((refs, rowIndex) =>
+    refs.flatMap((ref, imageIndex) =>
+      ref.startsWith(STORAGE_PREFIX)
+        ? [{ rowIndex, imageIndex, path: ref.slice(STORAGE_PREFIX.length) }]
+        : [],
+    ),
+  );
 
-  const signedByIndex = new Map<number, string>();
+  const signedByKey = new Map<string, string>();
   if (stored.length > 0) {
     const { data: signed } = await supabase.storage
       .from("obras")
@@ -92,11 +101,19 @@ async function fetchArtworks(): Promise<Artwork[]> {
       );
     signed?.forEach((s, idx) => {
       const target = stored[idx];
-      if (s?.signedUrl && target) signedByIndex.set(target.i, s.signedUrl);
+      if (s?.signedUrl && target) {
+        signedByKey.set(`${target.rowIndex}:${target.imageIndex}`, s.signedUrl);
+      }
     });
   }
 
-  return rows.map((r, i) => ({
+  return rows.map((r, rowIndex) => {
+    const resolvedImages = imageRefs[rowIndex]?.map((ref, imageIndex) =>
+      ref.startsWith(STORAGE_PREFIX)
+        ? (signedByKey.get(`${rowIndex}:${imageIndex}`) ?? "")
+        : ref,
+    ).filter(Boolean) ?? [];
+    return {
     slug: r.slug,
     catalogo: r.catalogo,
     titulo: r.titulo,
@@ -105,16 +122,16 @@ async function fetchArtworks(): Promise<Artwork[]> {
     soporte: r.soporte?.trim() || "—",
     formato: r.formato?.trim() || "—",
     descripcion: r.descripcion ?? "",
-    imagen: r.imagen_url.startsWith(STORAGE_PREFIX)
-      ? (signedByIndex.get(i) ?? "")
-      : r.imagen_url,
+    imagen: resolvedImages[0] ?? "",
+    imagenes: resolvedImages,
     precioOriginal: r.precio_original === null ? null : Number(r.precio_original),
     originalVendido: Boolean(r.original_vendido),
     impresiones: parseImpresiones(r.impresiones),
     precioMarco: Number(r.precio_marco ?? 0),
     precioMarcoMagnetico: Number(r.precio_marco_magnetico ?? 0),
     moneda: r.moneda?.trim() || "USD",
-  }));
+    };
+  });
 }
 
 export const artworksQueryOptions = queryOptions({
@@ -129,6 +146,7 @@ export interface AdminArtwork {
   catalogo: string;
   titulo: string;
   imagen_url: string;
+  imagenes: string[];
   orden: number;
   original_vendido: boolean;
 }
@@ -137,7 +155,7 @@ async function fetchAdminArtworks(): Promise<AdminArtwork[]> {
   const { data, error } = await supabase
     .from("artworks")
     .select(
-      "id, slug, catalogo, titulo, imagen_url, orden, original_vendido",
+      "id, slug, catalogo, titulo, imagen_url, imagenes, orden, original_vendido",
     )
     .order("orden", { ascending: true });
   if (error) throw error;

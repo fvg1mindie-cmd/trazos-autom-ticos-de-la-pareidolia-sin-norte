@@ -24,6 +24,7 @@ interface AdminObra {
   catalogo: string;
   titulo: string;
   imagen_url: string;
+  imagenes: string[];
   orden: number;
   original_vendido: boolean;
 }
@@ -223,7 +224,7 @@ function AdminPanel({ session }: { session: Session }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: obras = [] } = useQuery(adminArtworksQueryOptions);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [titulo, setTitulo] = useState("");
   const [tecnica, setTecnica] = useState("");
   const [soporte, setSoporte] = useState("");
@@ -236,24 +237,32 @@ function AdminPanel({ session }: { session: Session }) {
   const [impresiones, setImpresiones] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
 
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
     setBusy(true);
     setMsg(null);
     try {
       const next = obras.length + 1;
       const num = String(next).padStart(2, "0");
       const slug = `obra-${num}`;
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${slug}.${ext}`;
-
-      const { error: upErr } = await supabase.storage
-        .from("obras")
-        .upload(path, file, { contentType: file.type, upsert: true });
-      if (upErr) throw upErr;
+      const imageRefs: string[] = [];
+      for (let index = 0; index < files.length; index++) {
+        const currentFile = files[index];
+        if (!currentFile) continue;
+        const ext = (currentFile.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `${slug}/toma-${String(index + 1).padStart(2, "0")}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("obras")
+          .upload(path, currentFile, { contentType: currentFile.type, upsert: true });
+        if (upErr) throw upErr;
+        imageRefs.push(`${STORAGE_PREFIX}${path}`);
+      }
+      const mainImage = imageRefs[0];
+      if (!mainImage) throw new Error("No se pudo cargar ninguna foto");
 
       const { error: insErr } = await supabase.from("artworks").insert({
         slug,
@@ -264,7 +273,8 @@ function AdminPanel({ session }: { session: Session }) {
         soporte,
         formato,
         descripcion,
-        imagen_url: `${STORAGE_PREFIX}${path}`,
+        imagen_url: mainImage,
+        imagenes: imageRefs,
         orden: next,
         precio_original: precioOriginal ? Number(precioOriginal) : null,
         precio_marco: precioMarco ? Number(precioMarco) : 0,
@@ -274,7 +284,7 @@ function AdminPanel({ session }: { session: Session }) {
       if (insErr) throw insErr;
 
       setMsg(`✓ ${titulo.trim() || `Obra ${num}`} cargada como TA-${num}`);
-      setFile(null);
+      setFiles([]);
       setTitulo("");
       setTecnica("");
       setSoporte("");
@@ -291,6 +301,37 @@ function AdminPanel({ session }: { session: Session }) {
       setMsg(err instanceof Error ? err.message : "Error al subir la obra");
     }
     setBusy(false);
+  }
+
+  async function addPhotos(obra: AdminObra, selected: FileList | null) {
+    const newFiles = Array.from(selected ?? []);
+    if (newFiles.length === 0) return;
+    setAddingTo(obra.id);
+    setMsg(null);
+    try {
+      const existing = obra.imagenes.length > 0 ? obra.imagenes : [obra.imagen_url];
+      const additions: string[] = [];
+      for (let index = 0; index < newFiles.length; index++) {
+        const currentFile = newFiles[index];
+        if (!currentFile) continue;
+        const ext = (currentFile.name.split(".").pop() || "jpg").toLowerCase();
+        const number = existing.length + index + 1;
+        const path = `${obra.slug}/toma-${String(number).padStart(2, "0")}.${ext}`;
+        const { error } = await supabase.storage
+          .from("obras")
+          .upload(path, currentFile, { contentType: currentFile.type, upsert: false });
+        if (error) throw error;
+        additions.push(`${STORAGE_PREFIX}${path}`);
+      }
+      const imagenes = [...existing, ...additions];
+      const { error } = await supabase.from("artworks").update({ imagenes }).eq("id", obra.id);
+      if (error) throw error;
+      setMsg(`✓ ${additions.length} foto${additions.length === 1 ? "" : "s"} agregada${additions.length === 1 ? "" : "s"} a ${obra.titulo}`);
+      await queryClient.invalidateQueries({ queryKey: ["artworks"] });
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "No se pudieron agregar las fotos");
+    }
+    setAddingTo(null);
   }
 
   async function toggleVendida(obra: AdminObra) {
@@ -310,37 +351,42 @@ function AdminPanel({ session }: { session: Session }) {
   async function remove(obra: AdminObra) {
     if (!confirm(`¿Borrar «${obra.titulo}» (${obra.catalogo})?`)) return;
     await supabase.from("artworks").delete().eq("id", obra.id);
-    if (obra.imagen_url.startsWith(STORAGE_PREFIX)) {
-      await supabase.storage
-        .from("obras")
-        .remove([obra.imagen_url.slice(STORAGE_PREFIX.length)]);
-    }
+    const refs = obra.imagenes.length > 0 ? obra.imagenes : [obra.imagen_url];
+    const storedPaths = refs
+      .filter((ref) => ref.startsWith(STORAGE_PREFIX))
+      .map((ref) => ref.slice(STORAGE_PREFIX.length));
+    if (storedPaths.length > 0) await supabase.storage.from("obras").remove(storedPaths);
 
     // Reenumerar para que queden secuenciales TA-01, TA-02, … sin saltos.
     const { data: rest } = await supabase
       .from("artworks")
-      .select("id, slug, imagen_url")
+      .select("id, slug, imagen_url, imagenes")
       .order("orden", { ascending: true });
     const rows = (rest ?? []) as {
       id: string;
       slug: string;
       imagen_url: string;
+      imagenes: string[];
     }[];
     for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]!;
+      const row = rows[i];
+      if (!row) continue;
       const num = String(i + 1).padStart(2, "0");
       const newSlug = `obra-${num}`;
       const newCatalogo = `TA-${num}`;
-      let newImagenUrl = row.imagen_url;
-      if (row.imagen_url.startsWith(STORAGE_PREFIX)) {
-        const oldPath = row.imagen_url.slice(STORAGE_PREFIX.length);
-        const ext = (oldPath.split(".").pop() || "jpg").toLowerCase();
-        const newPath = `${newSlug}.${ext}`;
-        if (oldPath !== newPath) {
-          await supabase.storage.from("obras").move(oldPath, newPath);
-          newImagenUrl = `${STORAGE_PREFIX}${newPath}`;
+      const refs = row.imagenes.length > 0 ? row.imagenes : [row.imagen_url];
+      const renamedRefs: string[] = [];
+      for (const ref of refs) {
+        if (!ref.startsWith(STORAGE_PREFIX)) {
+          renamedRefs.push(ref);
+          continue;
         }
+        const oldPath = ref.slice(STORAGE_PREFIX.length);
+        const newPath = oldPath.replace(/^obra-\d+/, newSlug);
+        if (oldPath !== newPath) await supabase.storage.from("obras").move(oldPath, newPath);
+        renamedRefs.push(`${STORAGE_PREFIX}${newPath}`);
       }
+      const newImagenUrl = renamedRefs[0] ?? row.imagen_url;
       await supabase
         .from("artworks")
         .update({
@@ -348,6 +394,7 @@ function AdminPanel({ session }: { session: Session }) {
           catalogo: newCatalogo,
           orden: i + 1,
           imagen_url: newImagenUrl,
+          imagenes: renamedRefs,
         })
         .eq("id", row.id);
     }
@@ -378,12 +425,15 @@ function AdminPanel({ session }: { session: Session }) {
         <form onSubmit={upload} className="mt-6 space-y-4">
           <label className="flex cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed border-border px-4 py-8 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground">
             <Upload className="h-4 w-4" />
-            {file ? file.name : "Elegir foto de la pintura"}
+            {files.length > 0
+              ? `${files.length} foto${files.length === 1 ? "" : "s"} seleccionada${files.length === 1 ? "" : "s"}`
+              : "Elegir una o varias fotos de la obra"}
             <input
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
           </label>
           <input
@@ -413,7 +463,7 @@ function AdminPanel({ session }: { session: Session }) {
           </div>
           <button
             type="submit"
-            disabled={busy || !file}
+            disabled={busy || files.length === 0}
             className="w-full rounded-lg bg-primary px-4 py-3 font-mono text-[11px] tracking-[0.25em] text-primary-foreground uppercase transition-opacity disabled:opacity-50"
           >
             {busy ? "Subiendo…" : "Subir al muro"}
@@ -439,6 +489,20 @@ function AdminPanel({ session }: { session: Session }) {
                 </Link>
               </div>
               <div className="flex items-center gap-4">
+              <label className="cursor-pointer font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary">
+                {addingTo === o.id ? "Subiendo…" : `+ Fotos (${o.imagenes.length || 1})`}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={addingTo !== null}
+                  className="hidden"
+                  onChange={(event) => {
+                    void addPhotos(o, event.target.files);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
               <button
                 onClick={() => toggleVendida(o)}
                 className={`font-mono text-[10px] tracking-[0.2em] uppercase transition-colors ${o.original_vendido ? "text-neon" : "text-muted-foreground hover:text-primary"}`}
