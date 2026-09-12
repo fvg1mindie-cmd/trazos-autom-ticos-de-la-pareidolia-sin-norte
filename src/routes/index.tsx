@@ -21,7 +21,7 @@ import {
  * página "no encontrada" común — no hay ninguna pista de que existe un panel.
  * Una vez que iniciaste sesión, no la necesitás más: la sesión queda guardada.
  */
-const ADMIN_ENTRY_KEY = "cambiame";
+const ADMIN_ENTRY_KEY = "12348765D";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>) => ({
