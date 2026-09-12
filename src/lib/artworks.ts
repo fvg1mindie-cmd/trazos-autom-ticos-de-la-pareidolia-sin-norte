@@ -79,7 +79,9 @@ async function fetchArtworks(): Promise<Artwork[]> {
   // Resolver URLs firmadas para imágenes guardadas en el bucket privado.
   const imageRefs = rows.map((row) => {
     const additional = Array.isArray(row.imagenes)
-      ? row.imagenes.filter((value): value is string => typeof value === "string" && value.length > 0)
+      ? row.imagenes.filter(
+          (value): value is string => typeof value === "string" && value.length > 0,
+        )
       : [];
     return additional.length > 0 ? additional : [row.imagen_url];
   });
@@ -93,12 +95,10 @@ async function fetchArtworks(): Promise<Artwork[]> {
 
   const signedByKey = new Map<string, string>();
   if (stored.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from("obras")
-      .createSignedUrls(
-        stored.map((s) => s.path),
-        SIGNED_URL_TTL,
-      );
+    const { data: signed } = await supabase.storage.from("obras").createSignedUrls(
+      stored.map((s) => s.path),
+      SIGNED_URL_TTL,
+    );
     signed?.forEach((s, idx) => {
       const target = stored[idx];
       if (s?.signedUrl && target) {
@@ -108,28 +108,31 @@ async function fetchArtworks(): Promise<Artwork[]> {
   }
 
   return rows.map((r, rowIndex) => {
-    const resolvedImages = imageRefs[rowIndex]?.map((ref, imageIndex) =>
-      ref.startsWith(STORAGE_PREFIX)
-        ? (signedByKey.get(`${rowIndex}:${imageIndex}`) ?? "")
-        : ref,
-    ).filter(Boolean) ?? [];
+    const resolvedImages =
+      imageRefs[rowIndex]
+        ?.map((ref, imageIndex) =>
+          ref.startsWith(STORAGE_PREFIX)
+            ? (signedByKey.get(`${rowIndex}:${imageIndex}`) ?? "")
+            : ref,
+        )
+        .filter(Boolean) ?? [];
     return {
-    slug: r.slug,
-    catalogo: r.catalogo,
-    titulo: r.titulo,
-    anio: r.anio ?? 0,
-    tecnica: r.tecnica?.trim() || "—",
-    soporte: r.soporte?.trim() || "—",
-    formato: r.formato?.trim() || "—",
-    descripcion: r.descripcion ?? "",
-    imagen: resolvedImages[0] ?? "",
-    imagenes: resolvedImages,
-    precioOriginal: r.precio_original === null ? null : Number(r.precio_original),
-    originalVendido: Boolean(r.original_vendido),
-    impresiones: parseImpresiones(r.impresiones),
-    precioMarco: Number(r.precio_marco ?? 0),
-    precioMarcoMagnetico: Number(r.precio_marco_magnetico ?? 0),
-    moneda: r.moneda?.trim() || "USD",
+      slug: r.slug,
+      catalogo: r.catalogo,
+      titulo: r.titulo,
+      anio: r.anio ?? 0,
+      tecnica: r.tecnica?.trim() || "—",
+      soporte: r.soporte?.trim() || "—",
+      formato: r.formato?.trim() || "—",
+      descripcion: r.descripcion ?? "",
+      imagen: resolvedImages[0] ?? "",
+      imagenes: resolvedImages,
+      precioOriginal: r.precio_original === null ? null : Number(r.precio_original),
+      originalVendido: Boolean(r.original_vendido),
+      impresiones: parseImpresiones(r.impresiones),
+      precioMarco: Number(r.precio_marco ?? 0),
+      precioMarcoMagnetico: Number(r.precio_marco_magnetico ?? 0),
+      moneda: r.moneda?.trim() || "USD",
     };
   });
 }
@@ -145,21 +148,69 @@ export interface AdminArtwork {
   slug: string;
   catalogo: string;
   titulo: string;
+  anio: number | null;
+  tecnica: string;
+  soporte: string;
+  formato: string;
+  descripcion: string;
   imagen_url: string;
   imagenes: string[];
   orden: number;
   original_vendido: boolean;
+  precio_original: number | null;
+  precio_marco: number;
+  precio_marco_magnetico: number;
+  impresiones: Impresion[];
+}
+
+interface AdminArtworkRow {
+  id: string;
+  slug: string;
+  catalogo: string;
+  titulo: string;
+  anio: number | null;
+  tecnica: string | null;
+  soporte: string | null;
+  formato: string | null;
+  descripcion: string | null;
+  imagen_url: string;
+  imagenes: string[];
+  orden: number;
+  original_vendido: boolean | null;
+  precio_original: number | null;
+  precio_marco: number | null;
+  precio_marco_magnetico: number | null;
+  impresiones: unknown;
 }
 
 async function fetchAdminArtworks(): Promise<AdminArtwork[]> {
   const { data, error } = await supabase
     .from("artworks")
     .select(
-      "id, slug, catalogo, titulo, imagen_url, imagenes, orden, original_vendido",
+      "id, slug, catalogo, titulo, anio, tecnica, soporte, formato, descripcion, imagen_url, imagenes, orden, original_vendido, precio_original, precio_marco, precio_marco_magnetico, impresiones",
     )
     .order("orden", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as AdminArtwork[];
+  const rows = (data ?? []) as unknown as AdminArtworkRow[];
+  return rows.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    catalogo: r.catalogo,
+    titulo: r.titulo,
+    anio: r.anio,
+    tecnica: r.tecnica ?? "",
+    soporte: r.soporte ?? "",
+    formato: r.formato ?? "",
+    descripcion: r.descripcion ?? "",
+    imagen_url: r.imagen_url,
+    imagenes: r.imagenes,
+    orden: r.orden,
+    original_vendido: Boolean(r.original_vendido),
+    precio_original: r.precio_original === null ? null : Number(r.precio_original),
+    precio_marco: Number(r.precio_marco ?? 0),
+    precio_marco_magnetico: Number(r.precio_marco_magnetico ?? 0),
+    impresiones: parseImpresiones(r.impresiones),
+  }));
 }
 
 export const adminArtworksQueryOptions = queryOptions({
