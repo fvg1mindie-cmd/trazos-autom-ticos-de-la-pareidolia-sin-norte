@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, RotateCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff, RotateCw } from "lucide-react";
 import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
 import { RotateViewer } from "@/components/RotateViewer";
 import { AmbientAudio } from "@/components/AmbientAudio";
@@ -56,8 +56,10 @@ function ObraPage() {
   const [uiVisible, setUiVisible] = useState(false);
   // Aviso sutil de que la obra se puede girar; se oculta solo o al primer gesto.
   const [hint, setHint] = useState(true);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
+    setPhotoIndex(0);
     const t = window.setTimeout(() => setHint(false), 6000);
     return () => window.clearTimeout(t);
   }, [slug]);
@@ -78,12 +80,41 @@ function ObraPage() {
         onPointerDown={() => setHint(false)}
       >
         <RotateViewer
-          src={obra.imagen}
-          alt={`${obra.titulo} — ${obra.tecnica}, ${obra.anio}`}
-          storageKey={`orientacion-${obra.slug}`}
+          src={obra.imagenes[photoIndex] ?? obra.imagen}
+          alt={`${obra.titulo}, toma ${photoIndex + 1} — ${obra.tecnica}, ${obra.anio}`}
+          storageKey={`orientacion-${obra.slug}-${photoIndex}`}
           showControls={uiVisible}
           fill
         />
+
+        {obra.imagenes.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-3">
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((index) => (index - 1 + obra.imagenes.length) % obra.imagenes.length)}
+              aria-label="Ver foto anterior"
+              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((index) => (index + 1) % obra.imagenes.length)}
+              aria-label="Ver foto siguiente"
+              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {obra.imagenes.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center">
+            <span className="rounded-full border border-border/60 bg-background/60 px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] text-muted-foreground backdrop-blur">
+              {photoIndex + 1} / {obra.imagenes.length}
+            </span>
+          </div>
+        )}
 
         {/* Encabezado flotante */}
         <div
