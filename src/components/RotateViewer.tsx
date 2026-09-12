@@ -65,6 +65,12 @@ export function RotateViewer({
     [],
   );
 
+  // El zoom se maneja solo con los botones +/- (ver changeZoom más abajo).
+  // A propósito NO hay listener de "wheel" acá: si lo hubiera, cualquier
+  // rueda de mouse o gesto de pellizco en el touchpad quedaría capturado
+  // por este marco y bloquearía el scroll normal de la página (sobre todo
+  // grave en modo `fill`, donde este marco ocupa toda la pantalla).
+
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
