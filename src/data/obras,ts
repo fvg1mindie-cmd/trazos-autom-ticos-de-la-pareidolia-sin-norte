@@ -1,0 +1,49 @@
+export interface Impresion {
+  escala: string;
+  precio: number;
+}
+
+export interface Artwork {
+  slug: string;
+  catalogo: string;
+  titulo: string;
+  anio: number;
+  tecnica: string;
+  soporte: string;
+  formato: string;
+  descripcion: string;
+  imagen: string;
+  imagenes: string[];
+  precioOriginal: number | null;
+  originalVendido: boolean;
+  impresiones: Impresion[];
+  precioMarco: number;
+  precioMarcoMagnetico: number;
+  moneda: string;
+}
+
+export const OBRAS_DATA: Artwork[] = [
+  {
+    slug: "obra-01",
+    catalogo: "OBRA-001",
+    titulo: "Título de tu Obra 1",
+    anio: 2024,
+    tecnica: "Tinta y acrílico sobre papel",
+    soporte: "Papel 300g",
+    formato: "30 x 42 cm",
+    descripcion: "Descripción o concepto de la obra...",
+    imagen: "/assets/obra-01-v1.jpg", // Foto principal de portada
+    imagenes: [
+      "/assets/obra-01-v1.jpg", // Vista 1 (Portada)
+      "/assets/obra-01-v2.jpg", // Vista 2 (Detalle/Contraste)
+      "/assets/obra-01-v3.jpg"  // Vista 3 (Encuadre/Ángulo)
+    ],
+    precioOriginal: 30,
+    originalVendido: false,
+    impresiones: [],
+    precioMarco: 0,
+    precioMarcoMagnetico: 0,
+    moneda: "USD"
+  }
+  // Podés duplicar este bloque para cada una de tus 20 obras
+];
