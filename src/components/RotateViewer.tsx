@@ -65,6 +65,21 @@ export function RotateViewer({
     [],
   );
 
+  // Se remueve preventDefault global para no bloquear el scroll vertical de la página
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      // Solo hacer zoom si se mantiene presionada la tecla Ctrl/Cmd o si está interactuando activamente
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        changeZoom(e.deltaY < 0 ? 0.2 : -0.2);
+      }
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [changeZoom]);
+
   const onPointerDown = (e: React.PointerEvent) => {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
@@ -139,8 +154,8 @@ export function RotateViewer({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onDoubleClick={reset}
-        style={{ touchAction: "none", overscrollBehavior: "contain" }}
-        className={`touch-none overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        style={{ touchAction: "pan-y", overscrollBehavior: "contain" }}
+        className={`touch-pan-y overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-primary ${
           fill
             ? "flex-1 rounded-none"
             : "ring-glow rounded-2xl border border-border/70 bg-card"
