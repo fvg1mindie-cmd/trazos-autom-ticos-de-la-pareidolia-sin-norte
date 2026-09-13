@@ -15,13 +15,13 @@ export const Route = createFileRoute("/obras/$slug")({
       {
         name: "description",
         content:
-          "Obra sin arriba ni abajo: giranla 360° y detenela donde tu mirada la complete.",
+          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
       },
       { property: "og:title", content: "Obra — T·A·P·S·N" },
       {
         property: "og:description",
         content:
-          "Obra sin arriba ni abajo: giranla 360° y detenela donde tu mirada la complete.",
+          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -53,8 +53,9 @@ function ObraPage() {
   const { data: lista } = useSuspenseQuery(artworksQueryOptions);
   const obra = findArtwork(lista, slug);
   const { prev, next } = findNeighbors(lista, slug);
-  const [uiVisible, setUiVisible] = useState(false);
-  // Aviso sutil de que la obra se puede girar; se oculta solo o al primer gesto.
+  
+  // Por defecto uiVisible es true para que los controles y la ficha estén activos
+  const [uiVisible, setUiVisible] = useState(true);
   const [hint, setHint] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
 
@@ -68,9 +69,6 @@ function ObraPage() {
 
   const fade = (visible: boolean) =>
     `transition-opacity duration-500 ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`;
-  // La ficha/tienda solo ocupa espacio cuando está visible; oculta no genera scroll en blanco.
-  const fichaShell = (visible: boolean) =>
-    visible ? "" : "hidden";
 
   return (
     <div className="grain-overlay min-h-screen bg-background text-foreground">
@@ -164,11 +162,10 @@ function ObraPage() {
         </div>
       </section>
 
-      {/* Ficha + tienda */}
+      {/* Ficha + tienda (ahora visible siempre para habilitar el scroll) */}
       <section
         id="ficha"
-        className={`nebula-bg border-t border-border/60 ${fade(uiVisible)} ${fichaShell(uiVisible)}`}
-        aria-hidden={!uiVisible}
+        className="nebula-bg border-t border-border/60"
       >
         <div className="mx-auto max-w-2xl px-6 py-16">
           <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
