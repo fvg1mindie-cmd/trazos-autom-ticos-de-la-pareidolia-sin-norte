@@ -91,4 +91,28 @@ export const OBRAS_DATA: Artwork[] = [
     precioMarcoMagnetico: 18,
     moneda: "USD"
   },
+{
+    slug: "obra-d",
+    catalogo: "OBRA-D",
+    titulo: "TU FRASE O TÍTULO ACÁ",
+    anio: 2026,
+    tecnica: "TRAZOS AUTOMÁTICOS",
+    soporte: "PAPEL",
+    formato: "32x22 cm",
+    descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones
+",
+    imagen: "/github/D0001.jpg",
+    imagenes: [
+      "/github/D0001.jpg",
+      "/github/D0002.jpg",
+      "/github/D0003.jpg",
+      "/github/D00904.jpg"
+    ],
+    precioOriginal:30|null,
+    originalVendido: false,
+    impresiones: [15],
+    precioMarco: 10,
+    precioMarcoMagnetico: 18,
+    moneda: "USD"
+  },
 ];
