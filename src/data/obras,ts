@@ -21,42 +21,16 @@ export interface Artwork {
   precioMarcoMagnetico: number;
   moneda: string;
 }
-
-export const OBRAS_DATA: Artwork[] = [
-  {
-    slug: "obra-01",
-    catalogo: "OBRA-001",
-    titulo: "Título de tu Obra 1",
-    anio: 2024,
-    tecnica: "Tinta y acrílico sobre papel",
-    soporte: "Papel 300g",
-    formato: "30 x 42 cm",
-    descripcion: "Descripción o concepto de la obra...",
-    imagen: "/assets/obra-01-v1.jpg", // Foto principal de portada
-    imagenes: [
-      "/assets/obra-01-v1.jpg", // Vista 1 (Portada)
-      "/assets/obra-01-v2.jpg", // Vista 2 (Detalle/Contraste)
-      "/assets/obra-01-v3.jpg"  // Vista 3 (Encuadre/Ángulo)
-    ],
-    precioOriginal: 30,
-    originalVendido: false,
-    impresiones: [],
-    precioMarco: 0,
-    precioMarcoMagnetico: 0,
-    moneda: "USD"
-  }
-  // Podés duplicar este bloque para cada una de tus 20 obras
-];
 export const OBRAS_DATA: Artwork[] = [
   {
     slug: "obra-a",
     catalogo: "OBRA-A",
-    titulo: "Obra A",
-    anio: 2024,
-    tecnica: "Tinta / Acrílico",
-    soporte: "Papel",
-    formato: "30 x 42 cm",
-    descripcion: "Descripción de la Obra A...",
+    titulo: "El título es propio del observador",
+    anio: 2026,
+    tecnica: "TRAZOS AUTOMÁTICOS",
+    soporte: "PAPEL",
+    formato: "32x22 cm",
+    descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     imagen: "/github/A-0001.jpg",
     imagenes: [
       "/github/A-0001.jpg",
@@ -74,12 +48,12 @@ export const OBRAS_DATA: Artwork[] = [
   {
     slug: "obra-b",
     catalogo: "OBRA-B",
-    titulo: "Obra B",
-    anio: 2024,
-    tecnica: "Tinta / Acrílico",
-    soporte: "Papel",
-    formato: "30 x 42 cm",
-    descripcion: "Descripción de la Obra B...",
+    titulo: "El título es propio del observador",
+    anio: 2026,
+    tecnica: "TRAZOS AUTOMÁTICOS",
+    soporte: "PAPEL",
+    formato: "32x22 cm",
+    descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     imagen: "/github/B0001.jpg",
     imagenes: [
       "/github/B0001.jpg",
@@ -93,5 +67,28 @@ export const OBRAS_DATA: Artwork[] = [
     precioMarco: 0,
     precioMarcoMagnetico: 0,
     moneda: "USD"
-  }
+  },
+{
+    slug: "obra-c",
+    catalogo: "OBRA-C",
+    titulo: "El título es propio del observador",
+    anio: 2026,
+    tecnica: "TRAZOS AUTOMÁTICOS",
+    soporte: "PAPEL",
+    formato: "32x22 cm",
+    descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
+    imagen: "/github/C0001.jpg",
+    imagenes: [
+      "/github/C0001.jpg",
+      "/github/C0002.jpg",
+      "/github/C0003.jpg",
+      "/github/C00904.jpg"
+    ],
+    precioOriginal: null,
+    originalVendido: false,
+    impresiones: [],
+    precioMarco: 0,
+    precioMarcoMagnetico: 0,
+    moneda: "USD"
+  },
 ];
