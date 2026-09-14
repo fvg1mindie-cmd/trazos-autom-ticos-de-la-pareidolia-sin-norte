@@ -284,7 +284,7 @@ export const OBRAS_DATA: Artwork[] = [
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
-    imagen: "/ñ0001.jpg",
+    imagen: "/Ñ0001.jpg",
     imagenes: ["/Ñ0001.jpg", "/Ñ0002.jpg", "/Ñ0003.jpg"],
     precioOriginal: 30,
     originalVendido: false,
