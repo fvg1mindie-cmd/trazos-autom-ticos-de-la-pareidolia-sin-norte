@@ -32,12 +32,12 @@ export const OBRAS_DATA: Artwork[] = [
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
-    imagen: "/github/A-0001.jpg",
+    imagen: "/src/assets/obra-01.jpg",
     imagenes: [
-      "/github/A-0001.jpg",
-      "/github/A0002.jpg",
-      "/github/A0003.jpg",
-      "/github/A00904.jpg"
+      "/src/assets/obra-01.jpg",
+      "/src/assets/obra-02.jpg",
+      "/src/assets/obra-03.jpg",
+      "/src/assets/obra-04.jpg"
     ],
     precioOriginal: 30,
     originalVendido: false,
@@ -55,12 +55,12 @@ export const OBRAS_DATA: Artwork[] = [
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
-    imagen: "/github/B0001.jpg",
+    imagen: "/src/assets/obra-02.jpg",
     imagenes: [
-      "/github/B0001.jpg",
-      "/github/B00002.jpg",
-      "/github/B0003.jpg",
-      "/github/B0004.jpg"
+      "/src/assets/obra-02.jpg",
+      "/src/assets/obra-03.jpg",
+      "/src/assets/obra-04.jpg",
+      "/src/assets/obra-05.jpg"
     ],
     precioOriginal: 30,
     originalVendido: false,
@@ -78,12 +78,12 @@ export const OBRAS_DATA: Artwork[] = [
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
-    imagen: "/github/C0001.jpg",
+    imagen: "/src/assets/obra-03.jpg",
     imagenes: [
-      "/github/C0001.jpg",
-      "/github/C0002.jpg",
-      "/github/C0003.jpg",
-      "/github/C00904.jpg"
+      "/src/assets/obra-03.jpg",
+      "/src/assets/obra-04.jpg",
+      "/src/assets/obra-05.jpg",
+      "/src/assets/obra-06.jpg"
     ],
     precioOriginal: 30,
     originalVendido: false,
@@ -101,12 +101,12 @@ export const OBRAS_DATA: Artwork[] = [
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
-    imagen: "/github/D0001.jpg",
+    imagen: "/src/assets/obra-04.jpg",
     imagenes: [
-      "/github/D0001.jpg",
-      "/github/D0002.jpg",
-      "/github/D0003.jpg",
-      "/github/D00904.jpg"
+      "/src/assets/obra-04.jpg",
+      "/src/assets/obra-05.jpg",
+      "/src/assets/obra-06.jpg",
+      "/src/assets/obra-07.jpg"
     ],
     precioOriginal: 30,
     originalVendido: false,
