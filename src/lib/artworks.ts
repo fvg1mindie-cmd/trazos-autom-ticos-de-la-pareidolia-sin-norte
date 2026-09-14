@@ -1,3 +1,4 @@
+export const STORAGE_PREFIX = 'trazos_artworks_';
 import { queryOptions } from "@tanstack/react-query";
 import { OBRAS_DATA, Artwork, Impresion } from "@/data/obras";
 
