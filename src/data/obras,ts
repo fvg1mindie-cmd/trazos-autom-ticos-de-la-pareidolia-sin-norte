@@ -95,7 +95,7 @@ export const OBRAS_DATA: Artwork[] = [
   {
     slug: "obra-d",
     catalogo: "OBRA-D",
-    titulo: "TU FRASE O TÍTULO ACÁ",
+    titulo: "El título es propio del observador",
     anio: 2026,
     tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
