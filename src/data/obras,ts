@@ -47,3 +47,51 @@ export const OBRAS_DATA: Artwork[] = [
   }
   // Podés duplicar este bloque para cada una de tus 20 obras
 ];
+export const OBRAS_DATA: Artwork[] = [
+  {
+    slug: "obra-a",
+    catalogo: "OBRA-A",
+    titulo: "Obra A",
+    anio: 2024,
+    tecnica: "Tinta / Acrílico",
+    soporte: "Papel",
+    formato: "30 x 42 cm",
+    descripcion: "Descripción de la Obra A...",
+    imagen: "/github/A-0001.jpg",
+    imagenes: [
+      "/github/A-0001.jpg",
+      "/github/A0002.jpg",
+      "/github/A0003.jpg",
+      "/github/A00904.jpg"
+    ],
+    precioOriginal: null,
+    originalVendido: false,
+    impresiones: [],
+    precioMarco: 0,
+    precioMarcoMagnetico: 0,
+    moneda: "USD"
+  },
+  {
+    slug: "obra-b",
+    catalogo: "OBRA-B",
+    titulo: "Obra B",
+    anio: 2024,
+    tecnica: "Tinta / Acrílico",
+    soporte: "Papel",
+    formato: "30 x 42 cm",
+    descripcion: "Descripción de la Obra B...",
+    imagen: "/github/B0001.jpg",
+    imagenes: [
+      "/github/B0001.jpg",
+      "/github/B00002.jpg",
+      "/github/B0003.jpg",
+      "/github/B0004.jpg"
+    ],
+    precioOriginal: null,
+    originalVendido: false,
+    impresiones: [],
+    precioMarco: 0,
+    precioMarcoMagnetico: 0,
+    moneda: "USD"
+  }
+];
