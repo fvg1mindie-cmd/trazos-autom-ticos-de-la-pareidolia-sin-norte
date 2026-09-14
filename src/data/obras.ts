@@ -276,8 +276,8 @@ export const OBRAS_DATA: Artwork[] = [
     moneda: "USD"
   },
   {
-    slug: "obra-o",
-    catalogo: "OBRA-O",
+    slug: "obra-ñ",
+    catalogo: "OBRA-Ñ",
     titulo: "El título es propio del observador",
     anio: 2026,
     tecnica: "TRAZOS AUTOMÁTICOS",
@@ -285,7 +285,7 @@ export const OBRAS_DATA: Artwork[] = [
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     imagen: "/O0001.jpg",
-    imagenes: ["/O0001.jpg", "/O0002.jpg", "/O0003.jpg"],
+    imagenes: ["/Ñ0001.jpg", "/Ñ0002.jpg", "/Ñ0003.jpg"],
     precioOriginal: 30,
     originalVendido: false,
     impresiones: [],
