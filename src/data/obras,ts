@@ -38,11 +38,11 @@ export const OBRAS_DATA: Artwork[] = [
       "/github/A0003.jpg",
       "/github/A00904.jpg"
     ],
-    precioOriginal: null,
+    precioOriginal: 30|null,
     originalVendido: false,
-    impresiones: [],
-    precioMarco: 0,
-    precioMarcoMagnetico: 0,
+    impresiones: [15],
+    precioMarco: 10,
+    precioMarcoMagnetico: 18,
     moneda: "USD"
   },
   {
@@ -61,11 +61,11 @@ export const OBRAS_DATA: Artwork[] = [
       "/github/B0003.jpg",
       "/github/B0004.jpg"
     ],
-    precioOriginal: null,
+    precioOriginal:30|null,
     originalVendido: false,
-    impresiones: [],
-    precioMarco: 0,
-    precioMarcoMagnetico: 0,
+    impresiones: [15],
+    precioMarco: 10,
+    precioMarcoMagnetico: 18,
     moneda: "USD"
   },
 {
@@ -84,11 +84,11 @@ export const OBRAS_DATA: Artwork[] = [
       "/github/C0003.jpg",
       "/github/C00904.jpg"
     ],
-    precioOriginal: null,
+    precioOriginal:30|null,
     originalVendido: false,
-    impresiones: [],
-    precioMarco: 0,
-    precioMarcoMagnetico: 0,
+    impresiones: [15],
+    precioMarco: 10,
+    precioMarcoMagnetico: 18,
     moneda: "USD"
   },
 ];
