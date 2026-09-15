@@ -1,3 +1,4 @@
+import { ModalPago } from './ModalPago';
 import { useMemo, useState } from "react";
 import { Magnet, Frame, FileImage, Lock } from "lucide-react";
 import { formatPrecio, type Artwork } from "@/lib/artworks";
