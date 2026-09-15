@@ -38,7 +38,7 @@ export const OBRAS: Obra[] = [
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 30000,
     imagenUrl: "/assets/obra-d.jpg",
-    estado: "disponible"
+    estado: "regalada"
   },
   {
     id: "obra-e",
