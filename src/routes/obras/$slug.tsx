@@ -1,235 +1,132 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff, RotateCw } from "lucide-react";
-import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
-import { RotateViewer } from "@/components/RotateViewer";
-import { AmbientAudio } from "@/components/AmbientAudio";
-import { ObraTienda } from "@/components/ObraTienda";
+import { useState } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { ModalPago } from '../../components/ModalPago';
+import { DATOS_CONTACTO } from '../../data/contacto';
 
-export const Route = createFileRoute("/obras/$slug")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(artworksQueryOptions),
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.slug} — Trazos Automáticos de la Pareidolia Sin Norte` },
-      {
-        name: "description",
-        content:
-          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
-      },
-      { property: "og:title", content: "Obra — T·A·P·S·N" },
-      {
-        property: "og:description",
-        content:
-          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
-      },
-      { property: "og:type", content: "article" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: ObraPage,
-  errorComponent: () => <Aviso texto="No pudimos abrir esta obra" />,
-  notFoundComponent: () => <Aviso texto="Esta obra no está en el archivo" />,
+// Intentamos importar de las posibles ubicaciones de obras
+import * as obrasData from '../../data/obras';
+
+export const Route = createFileRoute('/obras/$slug')({
+  component: ObraDetalleRoute,
 });
 
-function Aviso({ texto }: { texto: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="text-center">
-        <p className="font-display text-3xl font-light">{texto}</p>
-        <Link
-          to="/"
-          className="text-glow-primary mt-6 inline-block font-mono text-[11px] tracking-[0.25em] text-primary uppercase"
-        >
-          ← Volver al muro
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function ObraPage() {
+function ObraDetalleRoute() {
   const { slug } = Route.useParams();
-  const { data: lista } = useSuspenseQuery(artworksQueryOptions);
-  const obra = findArtwork(lista, slug);
-  const { prev, next } = findNeighbors(lista, slug);
+  const [modalAbierto, setModalAbierto] = useState(false);
+
+  // Buscar la obra correspondiente al slug actual
+  const obrasList = (obrasData as any).OBRAS || (obrasData as any).default || [];
+  const obra = obrasList.find((item: any) => item.id === slug || item.slug === slug || item.id === `obra-${slug}`);
+
+  // Título e identificador para el modal
+  const tituloObra = obra?.titulo || `Obra ${slug.toUpperCase()}`;
+  const catalogoObra = obra?.id || slug;
   
-  // Por defecto uiVisible es true para que los controles y la ficha estén activos
-  const [uiVisible, setUiVisible] = useState(true);
-  const [hint, setHint] = useState(true);
-  const [photoIndex, setPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    setPhotoIndex(0);
-    const t = window.setTimeout(() => setHint(false), 6000);
-    return () => window.clearTimeout(t);
-  }, [slug]);
-
-  if (!obra) return <Aviso texto="Esta obra no está en el archivo" />;
-
-  const fade = (visible: boolean) =>
-    `transition-opacity duration-500 ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`;
+  // Estado de la obra (disponible, vendida, regalada)
+  const estadoObra = obra?.estado || 'disponible';
+  const noDisponible = estadoObra === 'vendida' || estadoObra === 'regalada';
 
   return (
-    <div className="grain-overlay min-h-screen bg-background text-foreground">
-      {/* Lienzo inmersivo */}
-      <section
-        className="relative h-[100svh] w-full"
-        onPointerDown={() => setHint(false)}
-      >
-        <RotateViewer
-          src={obra.imagenes[photoIndex] ?? obra.imagen}
-          alt={`${obra.titulo}, toma ${photoIndex + 1} — ${obra.tecnica}, ${obra.anio}`}
-          storageKey={`orientacion-${obra.slug}-${photoIndex}`}
-          showControls={uiVisible}
-          fill
-        />
-
-        {obra.imagenes.length > 1 && (
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-3">
-            <button
-              type="button"
-              onClick={() => setPhotoIndex((index) => (index - 1 + obra.imagenes.length) % obra.imagenes.length)}
-              aria-label="Ver foto anterior"
-              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPhotoIndex((index) => (index + 1) % obra.imagenes.length)}
-              aria-label="Ver foto siguiente"
-              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+    <div style={{ minHeight: '100vh', backgroundColor: '#09090b', color: '#fff', padding: '24px 16px', maxWidth: '800px', margin: '0 auto' }}>
+      
+      {/* Visualizador / Imagen de la obra con marca de agua */}
+      <div style={{ position: 'relative', width: '100%', marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#18181b', border: '1px solid #27272a' }}>
+        {obra?.imagenUrl ? (
+          <img 
+            src={obra.imagenUrl} 
+            alt={tituloObra} 
+            style={{ width: '100%', height: 'auto', display: 'block', filter: noDisponible ? 'brightness(0.65)' : 'none' }} 
+          />
+        ) : (
+          <div style={{ padding: '80px 20px', textAlign: 'center', color: '#71717a' }}>
+            <p style={{ margin: 0 }}>Vista previa de la obra: <strong>{tituloObra}</strong></p>
           </div>
         )}
 
-        {obra.imagenes.length > 1 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center">
-            <span className="rounded-full border border-border/60 bg-background/60 px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] text-muted-foreground backdrop-blur">
-              {photoIndex + 1} / {obra.imagenes.length}
+        {/* Marca de agua / Sello si la obra está vendida o regalada */}
+        {noDisponible && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%) rotate(-15deg)',
+            backgroundColor: estadoObra === 'vendida' ? 'rgba(220, 38, 38, 0.9)' : 'rgba(147, 51, 234, 0.9)',
+            color: '#fff',
+            fontWeight: '900',
+            fontSize: '1.5rem',
+            letterSpacing: '2px',
+            padding: '10px 28px',
+            borderRadius: '8px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+            border: '2px solid rgba(255,255,255,0.4)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap'
+          }}>
+            {estadoObra === 'vendida' ? 'VENDIDA' : 'COLECCIÓN PRIVADA'}
+          </div>
+        )}
+      </div>
+
+      {/* Información detallada */}
+      <div style={{ backgroundColor: '#18181b', padding: '24px', borderRadius: '12px', border: '1px solid #27272a' }}>
+        <h1 style={{ margin: '0 0 8px 0', fontSize: '1.8rem' }}>{tituloObra}</h1>
+        <p style={{ color: '#a1a1aa', margin: '0 0 16px 0', fontSize: '0.9rem' }}>
+          Código de catálogo: <strong style={{ color: '#d4d4d8' }}>{catalogoObra}</strong>
+        </p>
+
+        {obra?.descripcion && (
+          <p style={{ color: '#d4d4d8', lineHeight: '1.6', marginBottom: '20px' }}>
+            {obra.descripcion}
+          </p>
+        )}
+
+        {obra?.precio && (
+          <div style={{ margin: '20px 0' }}>
+            <span style={{ fontSize: '0.9rem', color: '#a1a1aa', display: 'block' }}>Valor estimado</span>
+            <span style={{ 
+              fontSize: '1.6rem', 
+              fontWeight: 'bold', 
+              color: noDisponible ? '#71717a' : '#00E676',
+              textDecoration: noDisponible ? 'line-through' : 'none'
+            }}>
+              ${obra.precio.toLocaleString()} ARS
             </span>
           </div>
         )}
 
-        {/* Encabezado flotante */}
-        <div
-          className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between px-5 ${fade(uiVisible)}`}
+        {/* Botón de Reservar / Consultar */}
+        <button
+          onClick={() => !noDisponible && setModalAbierto(true)}
+          disabled={noDisponible}
+          style={{
+            width: '100%',
+            backgroundColor: noDisponible ? '#27272a' : '#8b5cf6',
+            color: noDisponible ? '#a1a1aa' : '#fff',
+            fontWeight: 'bold',
+            fontSize: '1.1rem',
+            padding: '16px',
+            borderRadius: '10px',
+            border: 'none',
+            cursor: noDisponible ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            marginTop: '12px'
+          }}
         >
-          <button
-            type="button"
-            onClick={() =>
-              window.history.length > 1
-                ? window.history.back()
-                : window.location.assign("/")
-            }
-            className="pointer-events-auto rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase backdrop-blur transition-colors hover:text-neon"
-          >
-            ← Volver
-          </button>
-          <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
-            {obra.catalogo}
-          </span>
-        </div>
+          {noDisponible 
+            ? (estadoObra === 'vendida' ? 'OBRA VENDIDA' : 'COLECCIÓN PRIVADA') 
+            : 'RESERVAR / CONSULTAR'
+          }
+        </button>
+      </div>
 
-        {/* Indicador sutil de giro */}
-        <div
-          className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center transition-opacity duration-700 ${
-            hint && !uiVisible ? "opacity-100" : "opacity-0"
-          }`}
-          aria-hidden={!hint}
-        >
-          <span className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-2 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
-            <RotateCw className="h-3.5 w-3.5 animate-[spin_3s_linear_infinite] text-neon" />
-            Arrastrá para girar la obra
-          </span>
-        </div>
-
-        {/* Toggles siempre disponibles */}
-        <div className="absolute right-5 bottom-6 z-30 flex flex-col gap-2">
-          <AmbientAudio />
-          <button
-            type="button"
-            onClick={() => setUiVisible((v) => !v)}
-            aria-pressed={uiVisible}
-            aria-label={uiVisible ? "Ocultar la interfaz" : "Mostrar la interfaz"}
-            className="rounded-full border border-border/70 bg-card/70 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
-          >
-            {uiVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-      </section>
-
-      {/* Ficha + tienda (ahora visible siempre para habilitar el scroll) */}
-      <section
-        id="ficha"
-        className="nebula-bg border-t border-border/60"
-      >
-        <div className="mx-auto max-w-2xl px-6 py-16">
-          <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
-            Ficha de obra
-          </p>
-          <h1 className="font-display mt-4 text-4xl leading-tight font-light tracking-tight text-balance md:text-5xl">
-            {obra.titulo}
-          </h1>
-          {obra.descripcion && (
-            <p className="mt-6 text-[15px] leading-relaxed text-muted-foreground text-pretty">
-              {obra.descripcion}
-            </p>
-          )}
-
-          <dl className="mt-10 space-y-3 border-t border-border/70 pt-6 font-mono text-[12px] tracking-[0.15em] uppercase">
-            {[
-              ["Técnica", obra.tecnica],
-              ["Soporte", obra.soporte],
-              ["Formato", obra.formato],
-              ["Año", String(obra.anio || "—")],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-6">
-                <dt className="text-muted-foreground">{k}</dt>
-                <dd className="text-right">{v}</dd>
-              </div>
-            ))}
-            <div className="flex justify-between gap-6">
-              <dt className="text-muted-foreground">Catálogo</dt>
-              <dd className="text-glow-primary text-right text-primary">{obra.catalogo}</dd>
-            </div>
-          </dl>
-
-          <ObraTienda obra={obra} />
-        </div>
-
-        <nav className="border-t border-border/60">
-          <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-8">
-            {prev ? (
-              <Link
-                to="/obras/$slug"
-                params={{ slug: prev.slug }}
-                className="group flex items-center gap-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
-              >
-                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                {prev.titulo}
-              </Link>
-            ) : (
-              <span />
-            )}
-            {next ? (
-              <Link
-                to="/obras/$slug"
-                params={{ slug: next.slug }}
-                className="group flex items-center gap-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
-              >
-                {next.titulo}
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            ) : (
-              <span />
-            )}
-          </div>
-        </nav>
-      </section>
+      {/* Componente Modal de Pago e Información de Contacto */}
+      <ModalPago
+        isOpen={modalAbierto}
+        onClose={() => setModalAbierto(false)}
+        tituloObra={tituloObra}
+        catalogoObra={catalogoObra}
+      />
     </div>
   );
 }
