@@ -14,7 +14,7 @@ export const OBRAS: Obra[] = [
     descripcion: "Serie Trazos Automáticos",
     precio: 30000,
     imagenUrl: "/assets/obra-a.jpg",
-    estado: "vendida" // 👈 Poné "vendida" para el sello de vendida
+    estado: "vendida"
   },
   {
     id: "obra-d",
@@ -22,7 +22,7 @@ export const OBRAS: Obra[] = [
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 30000,
     imagenUrl: "/assets/obra-d.jpg",
-    estado: "disponible" // 👈 Poné "disponible" para poder comprarla
+    estado: "disponible"
   }
 ];
 
