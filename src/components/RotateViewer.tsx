@@ -1,16 +1,3 @@
-Sí, es perfectamente posible. Para solucionarlo sin alterar la lógica de la obra, los ajustes se aplican sobre tu componente **`src/components/RotateViewer.tsx`**:
-
-* **Barras de desplazamiento (scroll) independientes:** Se agrega `overflow-auto` al contenedor del lienzo para que, cuando la imagen se amplíe con zoom, la persona pueda desplazarse horizontal y verticalmente por toda la obra sin recortar bordes.
-* **Modo Pantalla Completa (Fullscreen):** Se añade el botón correspondiente (utilizando la API estándar de Fullscreen del navegador) para expandir el lienzo a toda la pantalla.
-* **Panel flotante de controles a un costado:** Al entrar en pantalla completa, la barra de herramientas de giro (360°/rotación) y zoom se posiciona lateralmente (`fixed right-6 top-1/2 -translate-y-1/2 flex-col`) para que nunca tape la imagen ni se pierda.
-
----
-
-### Código actualizado para `src/components/RotateViewer.tsx`
-
-Reemplazá el contenido de **`src/components/RotateViewer.tsx`** por este código:
-
-```tsx
 import React, { useState, useRef, useEffect } from "react";
 import { 
   RotateCw, 
@@ -42,7 +29,6 @@ export function RotateViewer({
   const [scale, setScale] = useState<number>(1);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Cargar orientación guardada
   useEffect(() => {
     if (storageKey) {
       const saved = localStorage.getItem(storageKey);
@@ -50,7 +36,6 @@ export function RotateViewer({
     }
   }, [storageKey]);
 
-  // Guardar orientación
   const handleRotate = (degrees: number) => {
     const newRot = (rotation + degrees + 360) % 360;
     setRotation(newRot);
@@ -59,7 +44,6 @@ export function RotateViewer({
     }
   };
 
-  // Activar / Desactivar pantalla completa
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
 
@@ -89,7 +73,6 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[500px]"
       } ${isFullscreen ? "p-0 bg-black" : "p-4"}`}
     >
-      {/* Contenedor desplazable de la imagen */}
       <div 
         className="transition-transform duration-300 ease-out flex items-center justify-center"
         style={{
@@ -105,7 +88,6 @@ export function RotateViewer({
         />
       </div>
 
-      {/* Panel flotante de controles (Ubicado a un costado si se activa o en pantalla completa) */}
       {showControls && (
         <div
           className={`z-40 flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur transition-all ${
@@ -114,7 +96,6 @@ export function RotateViewer({
               : "absolute bottom-6 left-1/2 -translate-x-1/2 flex-row"
           }`}
         >
-          {/* Rotar izquierda */}
           <button
             type="button"
             onClick={() => handleRotate(-90)}
@@ -124,7 +105,6 @@ export function RotateViewer({
             <RotateCcw className="h-4 w-4" />
           </button>
 
-          {/* Rotar derecha */}
           <button
             type="button"
             onClick={() => handleRotate(90)}
@@ -136,7 +116,6 @@ export function RotateViewer({
 
           <span className="h-4 w-[1px] bg-border/60 mx-1" />
 
-          {/* Zoom In */}
           <button
             type="button"
             onClick={() => setScale((s) => Math.min(s + 0.25, 3))}
@@ -146,7 +125,6 @@ export function RotateViewer({
             <ZoomIn className="h-4 w-4" />
           </button>
 
-          {/* Zoom Out */}
           <button
             type="button"
             onClick={() => setScale((s) => Math.max(s - 0.25, 0.75))}
@@ -156,7 +134,6 @@ export function RotateViewer({
             <ZoomOut className="h-4 w-4" />
           </button>
 
-          {/* Restablecer */}
           <button
             type="button"
             onClick={() => {
@@ -171,7 +148,6 @@ export function RotateViewer({
 
           <span className="h-4 w-[1px] bg-border/60 mx-1" />
 
-          {/* Botón Pantalla Completa */}
           <button
             type="button"
             onClick={toggleFullscreen}
@@ -185,5 +161,3 @@ export function RotateViewer({
     </div>
   );
 }
-
-```
