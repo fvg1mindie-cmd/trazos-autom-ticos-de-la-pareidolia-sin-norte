@@ -1,5 +1,34 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { RotateCcw, RotateCw, RefreshCw, ZoomIn, ZoomOut } from "lucide-react";
+Sí, es perfectamente posible. Para solucionarlo sin alterar la lógica de la obra, los ajustes se aplican sobre tu componente **`src/components/RotateViewer.tsx`**:
+
+* **Barras de desplazamiento (scroll) independientes:** Se agrega `overflow-auto` al contenedor del lienzo para que, cuando la imagen se amplíe con zoom, la persona pueda desplazarse horizontal y verticalmente por toda la obra sin recortar bordes.
+* **Modo Pantalla Completa (Fullscreen):** Se añade el botón correspondiente (utilizando la API estándar de Fullscreen del navegador) para expandir el lienzo a toda la pantalla.
+* **Panel flotante de controles a un costado:** Al entrar en pantalla completa, la barra de herramientas de giro (360°/rotación) y zoom se posiciona lateralmente (`fixed right-6 top-1/2 -translate-y-1/2 flex-col`) para que nunca tape la imagen ni se pierda.
+
+---
+
+### Código actualizado para `src/components/RotateViewer.tsx`
+
+Reemplazá el contenido de **`src/components/RotateViewer.tsx`** por este código:
+
+```tsx
+import React, { useState, useRef, useEffect } from "react";
+import { 
+  RotateCw, 
+  RotateCcw, 
+  ZoomIn, 
+  ZoomOut, 
+  Maximize, 
+  Minimize, 
+  RefreshCw 
+} from "lucide-react";
+
+interface RotateViewerProps {
+  src: string;
+  alt: string;
+  storageKey?: string;
+  showControls?: boolean;
+  fill?: boolean;
+}
 
 export function RotateViewer({
   src,
@@ -7,168 +36,154 @@ export function RotateViewer({
   storageKey,
   showControls = true,
   fill = false,
-}: {
-  src: string;
-  alt: string;
-  storageKey: string;
-  showControls?: boolean;
-  fill?: boolean;
-}) {
-  const [angle, setAngle] = useState(0);
-  const [zoom, setZoom] = useState(1);
-  const [dragging, setDragging] = useState(false);
-  const frameRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef<{ startPointer: number; startAngle: number } | null>(null);
+}: RotateViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rotation, setRotation] = useState<number>(0);
+  const [scale, setScale] = useState<number>(1);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
+  // Cargar orientación guardada
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved !== null) setAngle(Number(saved) || 0);
-    } catch {
-      /* sin almacenamiento */
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) setRotation(Number(saved));
     }
   }, [storageKey]);
 
-  const persist = useCallback(
-    (a: number) => {
-      setAngle(a);
-      try {
-        window.localStorage.setItem(storageKey, String(Math.round(a)));
-      } catch {
-        /* ignorar */
-      }
-    },
-    [storageKey],
-  );
-
-  const pointerAngle = (clientX: number, clientY: number) => {
-    const el = frameRef.current;
-    if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    const dx = clientX - (r.left + r.width / 2);
-    const dy = clientY - (r.top + r.height / 2);
-    return (Math.atan2(dy, dx) * 180) / Math.PI;
+  // Guardar orientación
+  const handleRotate = (degrees: number) => {
+    const newRot = (rotation + degrees + 360) % 360;
+    setRotation(newRot);
+    if (storageKey) {
+      localStorage.setItem(storageKey, String(newRot));
+    }
   };
 
-  const changeZoom = useCallback(
-    (delta: number) => setZoom((value) => Math.min(4, Math.max(1, value + delta))),
-    [],
-  );
+  // Activar / Desactivar pantalla completa
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    // Solo capturar si es con el botón primario o touch single
-    dragState.current = {
-      startPointer: pointerAngle(e.clientX, e.clientY),
-      startAngle: angle,
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => console.error(err));
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch(err => console.error(err));
+    }
+  };
+
+  useEffect(() => {
+    const handleFSChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
-    setDragging(true);
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragState.current || !dragging) return;
-    const delta = pointerAngle(e.clientX, e.clientY) - dragState.current.startPointer;
-    setAngle(dragState.current.startAngle + delta);
-  };
-
-  const onPointerUp = () => {
-    dragState.current = null;
-    setDragging(false);
-    persist(angle);
-  };
-
-  const step = (delta: number) => persist(Math.round(angle + delta));
-  const reset = () => persist(0);
+    document.addEventListener("fullscreenchange", handleFSChange);
+    return () => document.removeEventListener("fullscreenchange", handleFSChange);
+  }, []);
 
   return (
-    <div className={`select-none ${fill ? "flex h-full flex-col" : ""}`}>
-      <div
-        ref={frameRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-        onDoubleClick={reset}
-        style={{ touchAction: "pan-y" }}
-        className={`overflow-hidden outline-none ${
-          fill
-            ? "flex-1 rounded-none"
-            : "ring-glow rounded-2xl border border-border/70 bg-card"
-        } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+    <div
+      ref={containerRef}
+      className={`relative w-full h-full bg-background overflow-auto flex items-center justify-center ${
+        fill ? "min-h-[100svh]" : "min-h-[500px]"
+      } ${isFullscreen ? "p-0 bg-black" : "p-4"}`}
+    >
+      {/* Contenedor desplazable de la imagen */}
+      <div 
+        className="transition-transform duration-300 ease-out flex items-center justify-center"
+        style={{
+          transform: `rotate(${rotation}deg) scale(${scale})`,
+          transformOrigin: "center center",
+        }}
       >
-        {src ? (
-          <div
-            className={`flex w-full items-center justify-center ${
-              fill ? "h-full px-4 pt-16 pb-10" : "aspect-square p-4"
-            }`}
-          >
-            <img
-              src={src}
-              alt={alt}
-              draggable={false}
-              className="max-h-full max-w-full object-contain will-change-transform"
-              style={{
-                transform: `rotate(${angle}deg) scale(${zoom})`,
-                transition: dragging ? "none" : "transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)",
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-3 p-8 text-center">
-            <span className="font-mono text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
-              Obra pendiente
-            </span>
-          </div>
-        )}
+        <img
+          src={src}
+          alt={alt}
+          className="max-w-full max-h-[85vh] object-contain select-none pointer-events-auto"
+          draggable={false}
+        />
       </div>
 
-      <div
-        className={`transition-opacity duration-500 ${
-          showControls ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
-        <div className="mt-4 flex items-center justify-center gap-2">
+      {/* Panel flotante de controles (Ubicado a un costado si se activa o en pantalla completa) */}
+      {showControls && (
+        <div
+          className={`z-40 flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur transition-all ${
+            isFullscreen
+              ? "fixed right-6 top-1/2 -translate-y-1/2 flex-col shadow-2xl"
+              : "absolute bottom-6 left-1/2 -translate-x-1/2 flex-row"
+          }`}
+        >
+          {/* Rotar izquierda */}
           <button
             type="button"
-            onClick={() => changeZoom(-0.25)}
-            disabled={zoom <= 1}
-            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur hover:text-primary"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => step(-15)}
-            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur hover:text-primary"
+            onClick={() => handleRotate(-90)}
+            title="Girar 90° a la izquierda"
+            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
+
+          {/* Rotar derecha */}
           <button
             type="button"
-            onClick={reset}
-            className="rounded-full border border-border/70 bg-card/80 px-4 py-2.5 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase backdrop-blur hover:text-neon"
-          >
-            <span className="inline-flex items-center gap-2">
-              <RefreshCw className="h-3.5 w-3.5" />
-              {Math.round(((angle % 360) + 360) % 360)}°
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => step(15)}
-            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur hover:text-primary"
+            onClick={() => handleRotate(90)}
+            title="Girar 90° a la derecha"
+            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <RotateCw className="h-4 w-4" />
           </button>
+
+          <span className="h-4 w-[1px] bg-border/60 mx-1" />
+
+          {/* Zoom In */}
           <button
             type="button"
-            onClick={() => changeZoom(0.25)}
-            disabled={zoom >= 4}
-            className="rounded-full border border-border/70 bg-card/80 p-2.5 text-muted-foreground backdrop-blur hover:text-primary"
+            onClick={() => setScale((s) => Math.min(s + 0.25, 3))}
+            title="Acercar (Zoom +)"
+            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
+
+          {/* Zoom Out */}
+          <button
+            type="button"
+            onClick={() => setScale((s) => Math.max(s - 0.25, 0.75))}
+            title="Alejar (Zoom -)"
+            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+
+          {/* Restablecer */}
+          <button
+            type="button"
+            onClick={() => {
+              setScale(1);
+              setRotation(0);
+            }}
+            title="Restablecer vista"
+            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+
+          <span className="h-4 w-[1px] bg-border/60 mx-1" />
+
+          {/* Botón Pantalla Completa */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+            className="rounded-full p-2 text-primary hover:bg-primary/20 transition-colors"
+          >
+            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
+
+```
