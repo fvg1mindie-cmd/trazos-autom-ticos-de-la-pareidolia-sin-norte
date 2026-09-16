@@ -79,8 +79,8 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Margen superior duplicado (pt-96) para dar recorrido de scroll completo al hacer zoom */}
-      <div className="w-full min-h-full flex items-center justify-center pt-96 pb-32 px-12">
+      {/* Margen superior masivo (pt-[600px]) para recorrido libre de scroll al ampliar */}
+      <div className="w-full min-h-full flex items-center justify-center pt-[600px] pb-32 px-12">
         <div 
           className="transition-transform duration-300 ease-out flex items-center justify-center"
           style={{
@@ -121,7 +121,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas vertical (Mantenida exactamente donde quedó bien) */}
+      {/* Barra de herramientas en la posición que quedó bien */}
       {showControls && (
         <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
