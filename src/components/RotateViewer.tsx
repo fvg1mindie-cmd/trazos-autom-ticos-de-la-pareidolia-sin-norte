@@ -32,8 +32,8 @@ export function RotateViewer({
 }: RotateViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
-  // Arranca con zoom inicial aplicado (1.5x)
-  const [scale, setScale] = useState<number>(1.5);
+  // Multiplicador de tamaño real (100% = encaja en pantalla)
+  const [zoomLevel, setZoomLevel] = useState<number>(1.2);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -43,12 +43,14 @@ export function RotateViewer({
     }
   }, [storageKey]);
 
-  // Centrar el scroll del visor cuando carga o cambia la foto
+  // Centra automáticamente la foto al cargar o cambiar de obra
   useEffect(() => {
     if (containerRef.current) {
       const el = containerRef.current;
-      el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
-      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      setTimeout(() => {
+        el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      }, 50);
     }
   }, [src]);
 
@@ -89,25 +91,31 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Área flexible que permite expansión limpia al hacer zoom sin desfasar el inicio */}
-      <div className="min-w-full min-h-full flex items-center justify-center p-20">
+      {/* Contenedor flexible que ajusta su tamaño físico al hacer zoom */}
+      <div 
+        className="min-w-full min-h-full flex items-center justify-center p-12 transition-all duration-300 ease-out"
+        style={{
+          width: `${zoomLevel * 100}%`,
+          height: `${zoomLevel * 100}%`,
+        }}
+      >
         <div 
-          className="transition-transform duration-300 ease-out flex items-center justify-center m-auto"
+          className="transition-transform duration-300 ease-out flex items-center justify-center"
           style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transform: `rotate(${rotation}deg)`,
             transformOrigin: "center center",
           }}
         >
           <img
             src={src}
             alt={alt}
-            className="max-w-none w-auto h-auto max-h-[70vh] object-contain select-none pointer-events-auto shadow-2xl"
+            className="max-w-full max-h-[75vh] object-contain select-none pointer-events-auto shadow-2xl"
             draggable={false}
           />
         </div>
       </div>
 
-      {/* Flecha Anterior (Izquierda) */}
+      {/* Flecha Anterior */}
       {onPrev && (
         <button
           type="button"
@@ -119,7 +127,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Flecha Siguiente (Derecha) */}
+      {/* Flecha Siguiente */}
       {onNext && (
         <button
           type="button"
@@ -131,7 +139,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas en la posición actual */}
+      {/* Barra de herramientas en la posición cómoda */}
       {showControls && (
         <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
@@ -154,20 +162,18 @@ export function RotateViewer({
 
           <span className="w-4 h-[1px] bg-border/60 my-1" />
 
-          {/* Zoom en pasos de 0.25 hasta máximo 3.0 */}
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.25, 3.0))}
+            onClick={() => setZoomLevel((z) => Math.min(z + 0.3, 3.0))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
 
-          {/* Zoom para alejar en pasos de 0.25 hasta mínimo 0.4 */}
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(s - 0.25, 0.4))}
+            onClick={() => setZoomLevel((z) => Math.max(z - 0.3, 0.6))}
             title="Alejar (Zoom -)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -177,7 +183,7 @@ export function RotateViewer({
           <button
             type="button"
             onClick={() => {
-              setScale(1.5);
+              setZoomLevel(1.2);
               setRotation(0);
             }}
             title="Restablecer vista"
