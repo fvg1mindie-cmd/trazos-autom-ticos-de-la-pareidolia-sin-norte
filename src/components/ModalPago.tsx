@@ -14,7 +14,6 @@ export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObr
     `Hola, quiero consultar / adquirir la obra: ${tituloObra} (Código: ${catalogoObra})`
   );
 
-  // Enlace directo a tu WhatsApp con tu número real
   const linkWhatsApp = `https://wa.me/5492612440488?text=${mensajeWhatsApp}`;
   const linkLemon = `https://lemon.me`;
   const linkAstroPay = `https://astropay.com`;
@@ -44,7 +43,7 @@ export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObr
         color: '#fff',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', itemsCenter: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>Adquirir / Consultar Obra</h3>
           <button 
             onClick={onClose}
@@ -59,7 +58,6 @@ export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObr
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Botón WhatsApp */}
           <a
             href={linkWhatsApp}
             target="_blank"
@@ -79,7 +77,6 @@ export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObr
             Consultar por WhatsApp
           </a>
 
-          {/* Botón Lemon Cash */}
           <a
             href={linkLemon}
             target="_blank"
@@ -99,7 +96,6 @@ export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObr
             Pagar con Lemon Cash
           </a>
 
-          {/* Botón AstroPay */}
           <a
             href={linkAstroPay}
             target="_blank"
