@@ -79,8 +79,8 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Contenedor con 20cm de margen superior (pt-72) para scroll libre al hacer zoom */}
-      <div className="min-w-full min-h-full flex items-center justify-center pt-72 pb-24 px-12">
+      {/* Lienzo con Scroll libre para ver la imagen completa sin recortes al ampliar */}
+      <div className="w-full min-h-full flex items-center justify-center py-24 px-12">
         <div 
           className="transition-transform duration-300 ease-out flex items-center justify-center"
           style={{
@@ -91,7 +91,7 @@ export function RotateViewer({
           <img
             src={src}
             alt={alt}
-            className="max-w-full max-h-[75vh] object-contain select-none pointer-events-auto shadow-2xl"
+            className="max-w-none w-auto h-auto max-h-[80vh] object-contain select-none pointer-events-auto shadow-2xl"
             draggable={false}
           />
         </div>
@@ -109,7 +109,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Flecha Siguiente (Derecha, pegada al borde) */}
+      {/* Flecha Siguiente (Derecha) */}
       {onNext && (
         <button
           type="button"
@@ -121,9 +121,9 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas VERTICAL hacia adentro, paralela al parlantito */}
+      {/* Barra de herramientas en la marca verde (Esquina inferior derecha al lado del audio/ojo) */}
       {showControls && (
-        <div className="fixed right-20 bottom-16 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
+        <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
             type="button"
             onClick={() => handleRotate(-90)}
@@ -146,7 +146,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.25, 3))}
+            onClick={() => setScale((s) => Math.min(s + 0.3, 3))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -155,7 +155,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(s - 0.25, 0.75))}
+            onClick={() => setScale((s) => Math.max(s - 0.3, 0.8))}
             title="Alejar (Zoom -)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
