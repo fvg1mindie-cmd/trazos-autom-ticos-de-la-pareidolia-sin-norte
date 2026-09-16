@@ -1,253 +1,234 @@
-import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { Eye, ZoomIn, ZoomOut, Info, Image as ImageIcon } from 'lucide-react';
-import { ModalPago } from '../../components/ModalPago';
-import { OBRAS_DATA, Artwork } from '../../data/obras';
+import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff, RotateCw } from "lucide-react";
+import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
+import { RotateViewer } from "@/components/RotateViewer";
+import { AmbientAudio } from "@/components/AmbientAudio";
+import { ObraTienda } from "@/components/ObraTienda";
 
-export const Route = createFileRoute('/obras/$slug')({
-  component: ObraDetalleRoute,
+export const Route = createFileRoute("/obras/$slug")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(artworksQueryOptions),
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug} — Trazos Automáticos de la Pareidolia Sin Norte` },
+      {
+        name: "description",
+        content:
+          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
+      },
+      { property: "og:title", content: "Obra — T·A·P·S·N" },
+      {
+        property: "og:description",
+        content:
+          "Obra sin arriba ni abajo: girala 360° y detenela donde tu mirada la complete.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: ObraPage,
+  errorComponent: () => <Aviso texto="No pudimos abrir esta obra" />,
+  notFoundComponent: () => <Aviso texto="Esta obra no está en el archivo" />,
 });
 
-function ObraDetalleRoute() {
-  const { slug } = Route.useParams();
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [vistaActiva, setVistaActiva] = useState<'obra' | 'ficha'>('obra');
-  const [zoom, setZoom] = useState(false);
-
-  // Buscar la obra usando la estructura original
-  const obra: Artwork | undefined = OBRAS_DATA.find(
-    (item) => item.slug === slug || item.slug === `obra-${slug}` || item.catalogo.toLowerCase() === slug.toLowerCase()
+function Aviso({ texto }: { texto: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="text-center">
+        <p className="font-display text-3xl font-light">{texto}</p>
+        <Link
+          to="/"
+          className="text-glow-primary mt-6 inline-block font-mono text-[11px] tracking-[0.25em] text-primary uppercase"
+        >
+          ← Volver al muro
+        </Link>
+      </div>
+    </div>
   );
+}
 
-  const tituloObra = obra?.titulo || `Obra ${slug.toUpperCase()}`;
-  const catalogoObra = obra?.catalogo || slug.toUpperCase();
-  const noDisponible = obra?.originalVendido ?? false;
-  const imagenMostrar = obra?.imagen || '';
+function ObraPage() {
+  const { slug } = Route.useParams();
+  const { data: lista } = useSuspenseQuery(artworksQueryOptions);
+  const obra = findArtwork(lista, slug);
+  const { prev, next } = findNeighbors(lista, slug);
+  
+  const [uiVisible, setUiVisible] = useState(true);
+  const [hint, setHint] = useState(true);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+    const t = window.setTimeout(() => setHint(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [slug]);
+
+  if (!obra) return <Aviso texto="Esta obra no está en el archivo" />;
+
+  const fade = (visible: boolean) =>
+    `transition-opacity duration-500 ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#09090b', color: '#fff', padding: '24px 16px', maxWidth: '900px', margin: '0 auto' }}>
-      
-      {/* BARRA DE HERRAMIENTAS (Ojito, Lupita y Pestañas) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', backgroundColor: '#18181b', padding: '12px 16px', borderRadius: '12px', border: '1px solid #27272a' }}>
-        
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setVistaActiva('obra')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: vistaActiva === 'obra' ? '#8b5cf6' : '#27272a',
-              color: '#fff',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '0.9rem'
-            }}
-          >
-            <ImageIcon size={18} />
-            Obra
-          </button>
-          
-          <button
-            onClick={() => setVistaActiva('ficha')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: vistaActiva === 'ficha' ? '#8b5cf6' : '#27272a',
-              color: '#fff',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              fontSize: '0.9rem'
-            }}
-          >
-            <Info size={18} />
-            Ficha Técnica
-          </button>
-        </div>
+    <div className="grain-overlay min-h-screen bg-background text-foreground">
+      {/* Lienzo inmersivo */}
+      <section
+        className="relative h-[100svh] w-full"
+        onPointerDown={() => setHint(false)}
+      >
+        <RotateViewer
+          src={obra.imagenes[photoIndex] ?? obra.imagen}
+          alt={`${obra.titulo}, toma ${photoIndex + 1} — ${obra.tecnica}, ${obra.anio}`}
+          storageKey={`orientacion-${obra.slug}-${photoIndex}`}
+          showControls={uiVisible}
+          fill
+        />
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setVistaActiva(prev => prev === 'obra' ? 'ficha' : 'obra')}
-            title="Cambiar vista (Ojito)"
-            style={{
-              backgroundColor: '#27272a',
-              border: '1px solid #3f3f46',
-              color: '#fff',
-              padding: '8px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Eye size={20} color={vistaActiva === 'ficha' ? '#8b5cf6' : '#fff'} />
-          </button>
-
-          <button
-            onClick={() => setZoom(!zoom)}
-            title="Lupa (Zoom)"
-            style={{
-              backgroundColor: zoom ? '#8b5cf6' : '#27272a',
-              border: '1px solid #3f3f46',
-              color: '#fff',
-              padding: '8px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {zoom ? <ZoomOut size={20} /> : <ZoomIn size={20} />}
-          </button>
-        </div>
-      </div>
-
-      {/* VISTA OBRA */}
-      {vistaActiva === 'obra' && (
-        <div style={{ position: 'relative', width: '100%', marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#18181b', border: '1px solid #27272a' }}>
-          {imagenMostrar ? (
-            <div style={{ overflow: 'auto', textAlign: 'center', cursor: zoom ? 'zoom-out' : 'zoom-in' }} onClick={() => setZoom(!zoom)}>
-              <img 
-                src={imagenMostrar} 
-                alt={tituloObra} 
-                style={{ 
-                  width: zoom ? '160%' : '100%', 
-                  height: 'auto', 
-                  display: 'block', 
-                  margin: '0 auto',
-                  transition: 'width 0.3s ease',
-                  filter: noDisponible ? 'brightness(0.65)' : 'none' 
-                }} 
-              />
-            </div>
-          ) : (
-            <div style={{ padding: '80px 20px', textAlign: 'center', color: '#71717a' }}>
-              <p style={{ margin: 0 }}>Sin imagen cargada para: <strong>{tituloObra}</strong></p>
-            </div>
-          )}
-
-          {noDisponible && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%) rotate(-15deg)',
-              backgroundColor: 'rgba(220, 38, 38, 0.9)',
-              color: '#fff',
-              fontWeight: '900',
-              fontSize: '1.5rem',
-              letterSpacing: '2px',
-              padding: '10px 28px',
-              borderRadius: '8px',
-              textTransform: 'uppercase',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
-              border: '2px solid rgba(255,255,255,0.4)',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap'
-            }}>
-              VENDIDA
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* VISTA FICHA TÉCNICA */}
-      {vistaActiva === 'ficha' && (
-        <div style={{ backgroundColor: '#18181b', padding: '24px', borderRadius: '12px', border: '1px solid #27272a', marginBottom: '24px' }}>
-          <h2 style={{ marginTop: 0, color: '#8b5cf6', fontSize: '1.4rem' }}>Ficha Técnica</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', margin: '20px 0' }}>
-            <div>
-              <span style={{ color: '#71717a', fontSize: '0.85rem', display: 'block' }}>Código de Catálogo</span>
-              <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{catalogoObra}</strong>
-            </div>
-            {obra?.anio && (
-              <div>
-                <span style={{ color: '#71717a', fontSize: '0.85rem', display: 'block' }}>Año</span>
-                <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{obra.anio}</strong>
-              </div>
-            )}
-            {obra?.tecnica && (
-              <div>
-                <span style={{ color: '#71717a', fontSize: '0.85rem', display: 'block' }}>Técnica</span>
-                <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{obra.tecnica}</strong>
-              </div>
-            )}
-            {obra?.soporte && (
-              <div>
-                <span style={{ color: '#71717a', fontSize: '0.85rem', display: 'block' }}>Soporte</span>
-                <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{obra.soporte}</strong>
-              </div>
-            )}
-            {obra?.formato && (
-              <div>
-                <span style={{ color: '#71717a', fontSize: '0.85rem', display: 'block' }}>Formato / Medidas</span>
-                <strong style={{ color: '#fff', fontSize: '1.1rem' }}>{obra.formato}</strong>
-              </div>
-            )}
+        {obra.imagenes.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-3">
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((index) => (index - 1 + obra.imagenes.length) % obra.imagenes.length)}
+              aria-label="Ver foto anterior"
+              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((index) => (index + 1) % obra.imagenes.length)}
+              aria-label="Ver foto siguiente"
+              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* BLOQUE DE INFORMACIÓN */}
-      <div style={{ backgroundColor: '#18181b', padding: '24px', borderRadius: '12px', border: '1px solid #27272a' }}>
-        <h1 style={{ margin: '0 0 8px 0', fontSize: '1.8rem' }}>{tituloObra}</h1>
-        
-        {obra?.descripcion && (
-          <p style={{ color: '#d4d4d8', lineHeight: '1.6', marginBottom: '20px', fontStyle: 'italic' }}>
-            "{obra.descripcion}"
-          </p>
         )}
 
-        {obra?.precioOriginal !== null && obra?.precioOriginal !== undefined && (
-          <div style={{ margin: '20px 0' }}>
-            <span style={{ fontSize: '0.9rem', color: '#a1a1aa', display: 'block' }}>Valor estimado</span>
-            <span style={{ 
-              fontSize: '1.6rem', 
-              fontWeight: 'bold', 
-              color: noDisponible ? '#71717a' : '#00E676',
-              textDecoration: noDisponible ? 'line-through' : 'none'
-            }}>
-              ${obra.precioOriginal} {obra.moneda}
+        {obra.imagenes.length > 1 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center">
+            <span className="rounded-full border border-border/60 bg-background/60 px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] text-muted-foreground backdrop-blur">
+              {photoIndex + 1} / {obra.imagenes.length}
             </span>
           </div>
         )}
 
-        <button
-          onClick={() => !noDisponible && setModalAbierto(true)}
-          disabled={noDisponible}
-          style={{
-            width: '100%',
-            backgroundColor: noDisponible ? '#27272a' : '#8b5cf6',
-            color: noDisponible ? '#a1a1aa' : '#fff',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-            padding: '16px',
-            borderRadius: '10px',
-            border: 'none',
-            cursor: noDisponible ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            marginTop: '12px'
-          }}
+        {/* Encabezado flotante */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between px-5 ${fade(uiVisible)}`}
         >
-          {noDisponible ? 'OBRA VENDIDA' : 'RESERVAR / CONSULTAR'}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() =>
+              window.history.length > 1
+                ? window.history.back()
+                : window.location.assign("/")
+            }
+            className="pointer-events-auto rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase backdrop-blur transition-colors hover:text-neon"
+          >
+            ← Volver
+          </button>
+          <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
+            {obra.catalogo}
+          </span>
+        </div>
 
-      <ModalPago
-        isOpen={modalAbierto}
-        onClose={() => setModalAbierto(false)}
-        tituloObra={tituloObra}
-        catalogoObra={catalogoObra}
-      />
+        {/* Indicador de giro */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center transition-opacity duration-700 ${
+            hint && !uiVisible ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={!hint}
+        >
+          <span className="flex items-center gap-2 rounded-full border border-border/60 bg-background/50 px-4 py-2 font-mono text-[10px] tracking-[0.25em] text-muted-foreground uppercase backdrop-blur">
+            <RotateCw className="h-3.5 w-3.5 animate-[spin_3s_linear_infinite] text-neon" />
+            Arrastrá para girar la obra
+          </span>
+        </div>
+
+        {/* Toggles */}
+        <div className="absolute right-5 bottom-6 z-30 flex flex-col gap-2">
+          <AmbientAudio />
+          <button
+            type="button"
+            onClick={() => setUiVisible((v) => !v)}
+            aria-pressed={uiVisible}
+            aria-label={uiVisible ? "Ocultar la interfaz" : "Mostrar la interfaz"}
+            className="rounded-full border border-border/70 bg-card/70 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+          >
+            {uiVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </section>
+
+      {/* Ficha técnica y tienda */}
+      <section
+        id="ficha"
+        className="nebula-bg border-t border-border/60"
+      >
+        <div className="mx-auto max-w-2xl px-6 py-16">
+          <p className="font-mono text-[11px] tracking-[0.3em] text-neon uppercase">
+            Ficha de obra
+          </p>
+          <h1 className="font-display mt-4 text-4xl leading-tight font-light tracking-tight text-balance md:text-5xl">
+            {obra.titulo}
+          </h1>
+          {obra.descripcion && (
+            <p className="mt-6 text-[15px] leading-relaxed text-muted-foreground text-pretty">
+              {obra.descripcion}
+            </p>
+          )}
+
+          <dl className="mt-10 space-y-3 border-t border-border/70 pt-6 font-mono text-[12px] tracking-[0.15em] uppercase">
+            {[
+              ["Técnica", obra.tecnica],
+              ["Soporte", obra.soporte],
+              ["Formato", obra.formato],
+              ["Año", String(obra.anio || "—")],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-6">
+                <dt className="text-muted-foreground">{k}</dt>
+                <dd className="text-right">{v}</dd>
+              </div>
+            ))}
+            <div className="flex justify-between gap-6">
+              <dt className="text-muted-foreground">Catálogo</dt>
+              <dd className="text-glow-primary text-right text-primary">{obra.catalogo}</dd>
+            </div>
+          </dl>
+
+          <ObraTienda obra={obra} />
+        </div>
+
+        <nav className="border-t border-border/60">
+          <div className="mx-auto flex max-w-2xl items-center justify-between px-6 py-8">
+            {prev ? (
+              <Link
+                to="/obras/$slug"
+                params={{ slug: prev.slug }}
+                className="group flex items-center gap-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
+              >
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                {prev.titulo}
+              </Link>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <Link
+                to="/obras/$slug"
+                params={{ slug: next.slug }}
+                className="group flex items-center gap-3 font-mono text-[11px] tracking-[0.2em] text-muted-foreground uppercase transition-colors hover:text-primary"
+              >
+                {next.titulo}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
+        </nav>
+      </section>
     </div>
   );
 }
