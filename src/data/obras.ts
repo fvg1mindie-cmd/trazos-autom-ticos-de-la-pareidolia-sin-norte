@@ -89,7 +89,7 @@ export const OBRAS_DATA: Artwork[] = [
     imagen: "/D0001.jpg",
     imagenes: ["/D0001.jpg", "/D0002.jpg", "/D0003.jpg", "/D0004.jpg"],
     precioOriginal: 30,
-    originalVendido: false,
+    originalVendido: true,
     impresiones: [],
     precioMarco: 10,
     precioMarcoMagnetico: 18,
