@@ -130,4 +130,6 @@ export const OBRAS: Obra[] = [
   }
 ];
 
+export const OBRAS_DATA = OBRAS;
+
 export default OBRAS;
