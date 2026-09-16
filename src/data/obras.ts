@@ -8,15 +8,9 @@ export interface Obra {
   soporte?: string;
   formato?: string;
   descripcion?: string;
-  precio: number;
-  precioOriginal?: number;
-  precioMarco?: number;
-  precioMarcoMagnetico?: number;
-  moneda?: string;
-  imagenUrl?: string;
-  imagenes?: string[];
+  precio?: number;
+  imagenUrl: string;
   estado?: 'disponible' | 'vendida' | 'regalada';
-  originalVendido?: boolean;
 }
 
 export const OBRAS_DATA: Obra[] = [
@@ -31,13 +25,8 @@ export const OBRAS_DATA: Obra[] = [
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-a.jpg",
-    estado: "vendida",
-    originalVendido: true
+    imagenUrl: "/A0001.jpg",
+    estado: "vendida"
   },
   {
     id: "obra-b",
@@ -50,13 +39,8 @@ export const OBRAS_DATA: Obra[] = [
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-b.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/B0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-c",
@@ -69,13 +53,8 @@ export const OBRAS_DATA: Obra[] = [
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-c.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/C0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-d",
@@ -83,18 +62,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-D",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-d.jpg",
-    estado: "regalada",
-    originalVendido: true
+    imagenUrl: "/D0001.jpg",
+    estado: "regalada"
   },
   {
     id: "obra-e",
@@ -102,18 +76,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-E",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-e.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/E0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-f",
@@ -121,18 +90,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-F",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-f.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/F0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-g",
@@ -140,18 +104,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-G",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-g.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/G0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-h",
@@ -159,18 +118,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-H",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-h.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/H0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-i",
@@ -178,18 +132,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-I",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-i.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/I0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-j",
@@ -197,18 +146,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-J",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-j.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/J0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-k",
@@ -216,18 +160,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-K",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-k.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/K0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-l",
@@ -235,18 +174,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-L",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-l.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/L0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-m",
@@ -254,18 +188,13 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-M",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-m.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/M0001.jpg",
+    estado: "disponible"
   },
   {
     id: "obra-n",
@@ -273,37 +202,27 @@ export const OBRAS_DATA: Obra[] = [
     catalogo: "OBRA-N",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-n.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/N0001.jpg",
+    estado: "disponible"
   },
   {
-    id: "obra-ñ",
-    slug: "obra-n-tilde",
-    catalogo: "OBRA-Ñ",
+    id: "obra-o",
+    slug: "obra-o",
+    catalogo: "OBRA-O",
     titulo: "El título es propio del observador",
     anio: 2026,
-    tecnica: "PAREIDOLIA SIN NORTE",
+    tecnica: "TRAZOS AUTOMÁTICOS",
     soporte: "PAPEL",
     formato: "32x22 cm",
     descripcion: "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones",
     precio: 30,
-    precioOriginal: 30,
-    precioMarco: 10,
-    precioMarcoMagnetico: 18,
-    moneda: "USD",
-    imagenUrl: "/assets/obra-ñ.jpg",
-    estado: "disponible",
-    originalVendido: false
+    imagenUrl: "/O0001.jpg",
+    estado: "disponible"
   }
 ];
 
