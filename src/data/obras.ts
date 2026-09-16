@@ -1,5 +1,6 @@
 export interface Obra {
   id: string;
+  slug: string;
   titulo: string;
   descripcion?: string;
   precio: number;
@@ -10,6 +11,7 @@ export interface Obra {
 export const OBRAS: Obra[] = [
   {
     id: "obra-a",
+    slug: "obra-a",
     titulo: "Obra A",
     descripcion: "Serie Trazos Automáticos",
     precio: 0,
@@ -18,6 +20,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-b",
+    slug: "obra-b",
     titulo: "Obra B",
     descripcion: "Serie Trazos Automáticos",
     precio: 0,
@@ -26,6 +29,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-c",
+    slug: "obra-c",
     titulo: "Obra C",
     descripcion: "Serie Trazos Automáticos",
     precio: 0,
@@ -34,6 +38,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-d",
+    slug: "obra-d",
     titulo: "Obra D",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -42,6 +47,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-e",
+    slug: "obra-e",
     titulo: "Obra E",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -50,6 +56,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-f",
+    slug: "obra-f",
     titulo: "Obra F",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -58,6 +65,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-g",
+    slug: "obra-g",
     titulo: "Obra G",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -66,6 +74,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-h",
+    slug: "obra-h",
     titulo: "Obra H",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -74,6 +83,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-i",
+    slug: "obra-i",
     titulo: "Obra I",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -82,6 +92,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-j",
+    slug: "obra-j",
     titulo: "Obra J",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -90,6 +101,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-k",
+    slug: "obra-k",
     titulo: "Obra K",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -98,6 +110,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-l",
+    slug: "obra-l",
     titulo: "Obra L",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -106,6 +119,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-m",
+    slug: "obra-m",
     titulo: "Obra M",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -114,6 +128,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-n",
+    slug: "obra-n",
     titulo: "Obra N",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
@@ -122,6 +137,7 @@ export const OBRAS: Obra[] = [
   },
   {
     id: "obra-ñ",
+    slug: "obra-n-2",
     titulo: "Obra Ñ",
     descripcion: "Serie Pareidolia Sin Norte",
     precio: 0,
