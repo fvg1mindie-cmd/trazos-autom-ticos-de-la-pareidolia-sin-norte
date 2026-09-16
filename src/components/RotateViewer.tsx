@@ -6,7 +6,9 @@ import {
   ZoomOut, 
   Maximize, 
   Minimize, 
-  RefreshCw 
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface RotateViewerProps {
@@ -15,6 +17,8 @@ interface RotateViewerProps {
   storageKey?: string;
   showControls?: boolean;
   fill?: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 export function RotateViewer({
@@ -23,6 +27,8 @@ export function RotateViewer({
   storageKey,
   showControls = true,
   fill = false,
+  onPrev,
+  onNext
 }: RotateViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
@@ -69,30 +75,58 @@ export function RotateViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full bg-background overflow-auto flex items-center justify-center ${
+      className={`relative w-full h-full bg-background overflow-auto ${
         fill ? "min-h-[100svh]" : "min-h-[500px]"
-      } ${isFullscreen ? "p-0 bg-black" : "p-4"}`}
+      } ${isFullscreen ? "bg-black" : ""}`}
     >
-      <div 
-        className="transition-transform duration-300 ease-out flex items-center justify-center"
-        style={{
-          transform: `rotate(${rotation}deg) scale(${scale})`,
-          transformOrigin: "center center",
-        }}
-      >
-        <img
-          src={src}
-          alt={alt}
-          className="max-w-full max-h-[85vh] object-contain select-none pointer-events-auto"
-          draggable={false}
-        />
+      {/* Área con scroll libre para zoom sin recortes */}
+      <div className="min-w-full min-h-full flex items-center justify-center p-12">
+        <div 
+          className="transition-transform duration-300 ease-out flex items-center justify-center"
+          style={{
+            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transformOrigin: "center center",
+          }}
+        >
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full max-h-[80vh] object-contain select-none pointer-events-auto"
+            draggable={false}
+          />
+        </div>
       </div>
 
+      {/* Flecha Anterior (bien al costado fuera del centro) */}
+      {onPrev && (
+        <button
+          type="button"
+          onClick={onPrev}
+          title="Imagen anterior"
+          className="fixed left-3 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/60 p-3 text-foreground backdrop-blur border border-border/50 hover:bg-background/90 transition-all"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Flecha Siguiente (bien al costado fuera del centro) */}
+      {onNext && (
+        <button
+          type="button"
+          onClick={onNext}
+          title="Siguiente imagen"
+          className="fixed right-3 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/60 p-3 text-foreground backdrop-blur border border-border/50 hover:bg-background/90 transition-all"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+
+      {/* Panel flotante de herramientas */}
       {showControls && (
         <div
-          className={`z-40 flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur transition-all ${
+          className={`z-50 flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur transition-all ${
             isFullscreen
-              ? "fixed right-6 top-1/2 -translate-y-1/2 flex-col shadow-2xl"
+              ? "fixed right-4 bottom-6 flex-row shadow-2xl"
               : "absolute bottom-6 left-1/2 -translate-x-1/2 flex-row"
           }`}
         >
