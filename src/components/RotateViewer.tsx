@@ -76,11 +76,11 @@ export function RotateViewer({
     <div
       ref={containerRef}
       className={`relative w-full h-full bg-background overflow-auto ${
-        fill ? "min-h-[100svh]" : "min-h-[500px]"
+        fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Área con scroll libre para zoom sin recortes */}
-      <div className="min-w-full min-h-full flex items-center justify-center p-12">
+      {/* Contenedor principal con margen superior generoso (pt-28) */}
+      <div className="min-w-full min-h-full flex items-center justify-center pt-28 pb-12 px-12">
         <div 
           className="transition-transform duration-300 ease-out flex items-center justify-center"
           style={{
@@ -91,45 +91,39 @@ export function RotateViewer({
           <img
             src={src}
             alt={alt}
-            className="max-w-full max-h-[80vh] object-contain select-none pointer-events-auto"
+            className="max-w-full max-h-[75vh] object-contain select-none pointer-events-auto shadow-2xl"
             draggable={false}
           />
         </div>
       </div>
 
-      {/* Flecha Anterior (bien al costado fuera del centro) */}
+      {/* Flecha Anterior */}
       {onPrev && (
         <button
           type="button"
           onClick={onPrev}
           title="Imagen anterior"
-          className="fixed left-3 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/60 p-3 text-foreground backdrop-blur border border-border/50 hover:bg-background/90 transition-all"
+          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/50 p-2 text-foreground/80 backdrop-blur hover:bg-background/80 hover:text-foreground transition-all"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
       )}
 
-      {/* Flecha Siguiente (bien al costado fuera del centro) */}
+      {/* Flecha Siguiente */}
       {onNext && (
         <button
           type="button"
           onClick={onNext}
           title="Siguiente imagen"
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-50 rounded-full bg-background/60 p-3 text-foreground backdrop-blur border border-border/50 hover:bg-background/90 transition-all"
+          className="fixed right-16 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/50 p-2 text-foreground/80 backdrop-blur hover:bg-background/80 hover:text-foreground transition-all"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
       )}
 
-      {/* Panel flotante de herramientas */}
+      {/* Barra de herramientas VERTICAL ubicada en el lateral derecho */}
       {showControls && (
-        <div
-          className={`z-50 flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur transition-all ${
-            isFullscreen
-              ? "fixed right-4 bottom-6 flex-row shadow-2xl"
-              : "absolute bottom-6 left-1/2 -translate-x-1/2 flex-row"
-          }`}
-        >
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
             type="button"
             onClick={() => handleRotate(-90)}
@@ -148,7 +142,7 @@ export function RotateViewer({
             <RotateCw className="h-4 w-4" />
           </button>
 
-          <span className="h-4 w-[1px] bg-border/60 mx-1" />
+          <span className="w-4 h-[1px] bg-border/60 my-1" />
 
           <button
             type="button"
@@ -180,7 +174,7 @@ export function RotateViewer({
             <RefreshCw className="h-4 w-4" />
           </button>
 
-          <span className="h-4 w-[1px] bg-border/60 mx-1" />
+          <span className="w-4 h-[1px] bg-border/60 my-1" />
 
           <button
             type="button"
