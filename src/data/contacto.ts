@@ -5,10 +5,10 @@ export interface ContactoInfo {
   ubicacion?: string;
 }
 
-export const CONTACTO_INFO: ContactoInfo = {
+export const DATOS_CONTACTO = {
   email: "contacto@pareidolia.com",
   instagram: "@pareidolia.sin.norte",
   ubicacion: "Mendoza, Argentina"
 };
 
-export default CONTACTO_INFO;
+export default DATOS_CONTACTO;
