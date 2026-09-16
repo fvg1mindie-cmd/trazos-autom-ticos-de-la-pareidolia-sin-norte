@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { DATOS_CONTACTO } from '../data/contacto';
+import React from 'react';
 
 interface ModalPagoProps {
   isOpen: boolean;
@@ -9,72 +8,134 @@ interface ModalPagoProps {
 }
 
 export const ModalPago: React.FC<ModalPagoProps> = ({ isOpen, onClose, tituloObra, catalogoObra }) => {
-  const [copiado, setCopiado] = useState<string | null>(null);
-
   if (!isOpen) return null;
 
   const mensajeWhatsApp = encodeURIComponent(
-    `Hola, estoy interesado/a en la obra "${catalogoObra} - ${tituloObra}". ¿Sigue disponible?`
+    `Hola, quiero consultar / adquirir la obra: ${tituloObra} (Código: ${catalogoObra})`
   );
 
-  const copiarTexto = (texto: string, clave: string) => {
-    navigator.clipboard.writeText(texto);
-    setCopiado(clave);
-    setTimeout(() => setCopiado(null), 2000);
-  };
+  // Enlaces de tus medios de pago y contacto
+  const linkWhatsApp = `https://wa.me/5492610000000?text=${mensajeWhatsApp}`; // Modificar con tu número de WhatsApp
+  const linkLemon = `https://lemon.me`; // Enlace a tu alias / tag de Lemon
+  const linkAstroPay = `https://astropay.com`; // Enlace a tu opción de AstroPay
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-      <div style={{ backgroundColor: '#18181b', color: '#fff', borderRadius: '12px', padding: '24px', maxWidth: '420px', width: '100%', border: '1px solid #27272a' }}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      padding: '16px',
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div style={{
+        backgroundColor: '#18181b',
+        border: '1px solid #27272a',
+        borderRadius: '16px',
+        padding: '24px',
+        maxWidth: '420px',
+        width: '100%',
+        color: '#fff',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Comprar / Consultar</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#a1a1aa', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>Adquirir / Consultar Obra</h3>
+          <button 
+            onClick={onClose}
+            style={{ backgroundColor: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '1.5rem', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
         </div>
 
-        <p style={{ fontSize: '0.9rem', color: '#a1a1aa', marginBottom: '20px' }}>
-          Obra seleccionada: <strong>{catalogoObra}</strong>
+        <p style={{ color: '#a1a1aa', fontSize: '0.9rem', marginBottom: '20px' }}>
+          Seleccioná un medio de pago o contacto directo para coordinar la entrega de <strong>{catalogoObra}</strong>:
         </p>
 
-        {/* Botón WhatsApp */}
-        <a
-          href={`https://wa.me/${DATOS_CONTACTO.whatsappNumber}?text=${mensajeWhatsApp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: 'block', textAlign: 'center', backgroundColor: '#25D366', color: '#000', fontWeight: 'bold', padding: '12px', borderRadius: '8px', textDecoration: 'none', marginBottom: '16px' }}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Botón WhatsApp */}
+          <a
+            href={linkWhatsApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              backgroundColor: '#25D366',
+              color: '#000',
+              fontWeight: 'bold',
+              padding: '14px',
+              borderRadius: '10px',
+              textDecoration: 'none',
+              fontSize: '0.95rem'
+            }}
+          >
+            Consultar por WhatsApp
+          </a>
+
+          {/* Botón Lemon Cash */}
+          <a
+            href={linkLemon}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              backgroundColor: '#00E676',
+              color: '#000',
+              fontWeight: 'bold',
+              padding: '14px',
+              borderRadius: '10px',
+              textDecoration: 'none',
+              fontSize: '0.95rem'
+            }}
+          >
+            Pagar con Lemon Cash
+          </a>
+
+          {/* Botón AstroPay */}
+          <a
+            href={linkAstroPay}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              backgroundColor: '#3b82f6',
+              color: '#fff',
+              fontWeight: 'bold',
+              padding: '14px',
+              borderRadius: '10px',
+              textDecoration: 'none',
+              fontSize: '0.95rem'
+            }}
+          >
+            Pagar con AstroPay
+          </a>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '100%',
+            backgroundColor: 'transparent',
+            border: '1px solid #3f3f46',
+            color: '#a1a1aa',
+            padding: '10px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            marginTop: '16px',
+            fontSize: '0.85rem'
+          }}
         >
-          💬 Consultar por WhatsApp
-        </a>
-
-        <hr style={{ borderColor: '#27272a', margin: '16px 0' }} />
-
-        {/* Opción Lemon Cash */}
-        <div style={{ backgroundColor: '#09090b', padding: '12px', borderRadius: '8px', marginBottom: '12px', border: '1px solid #27272a' }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#00E676' }}>🍋 Lemon Cash</p>
-          <p style={{ margin: '2px 0', fontSize: '0.85rem' }}>Tag: {DATOS_CONTACTO.lemon.tag}</p>
-          <p style={{ margin: '2px 0', fontSize: '0.85rem' }}>Alias: {DATOS_CONTACTO.lemon.alias}</p>
-          <button
-            onClick={() => copiarTexto(DATOS_CONTACTO.lemon.alias, 'lemon')}
-            style={{ marginTop: '8px', width: '100%', padding: '6px', backgroundColor: '#27272a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-          >
-            {copiado === 'lemon' ? '¡Alias copiado!' : 'Copiar Alias de Lemon'}
-          </button>
-        </div>
-
-        {/* Opción AstroPay */}
-        <div style={{ backgroundColor: '#09090b', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #27272a' }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#FF4081' }}>🚀 AstroPay</p>
-          <p style={{ margin: '2px 0', fontSize: '0.85rem' }}>Alias: {DATOS_CONTACTO.astroPay.alias}</p>
-          <button
-            onClick={() => copiarTexto(DATOS_CONTACTO.astroPay.alias, 'astro')}
-            style={{ marginTop: '8px', width: '100%', padding: '6px', backgroundColor: '#27272a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-          >
-            {copiado === 'astro' ? '¡Alias copiado!' : 'Copiar Alias de AstroPay'}
-          </button>
-        </div>
-
-        <p style={{ fontSize: '0.75rem', color: '#71717a', textAlign: 'center', margin: 0 }}>
-          Tras realizar la transferencia, enviá el comprobante por WhatsApp para confirmar tu reserva.
-        </p>
+          Cancelar
+        </button>
       </div>
     </div>
   );
