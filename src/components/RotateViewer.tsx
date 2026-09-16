@@ -32,7 +32,8 @@ export function RotateViewer({
 }: RotateViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1);
+  // Arranca con zoom inicial aplicado (1.5x)
+  const [scale, setScale] = useState<number>(1.5);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -41,6 +42,15 @@ export function RotateViewer({
       if (saved) setRotation(Number(saved));
     }
   }, [storageKey]);
+
+  // Centrar el scroll del visor cuando carga o cambia la foto
+  useEffect(() => {
+    if (containerRef.current) {
+      const el = containerRef.current;
+      el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    }
+  }, [src]);
 
   const handleRotate = (degrees: number) => {
     const newRot = (rotation + degrees + 360) % 360;
@@ -79,10 +89,10 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Margen superior masivo (pt-[600px]) para recorrido libre de scroll al ampliar */}
-      <div className="w-full min-h-full flex items-center justify-center pt-[600px] pb-32 px-12">
+      {/* Área flexible que permite expansión limpia al hacer zoom sin desfasar el inicio */}
+      <div className="min-w-full min-h-full flex items-center justify-center p-20">
         <div 
-          className="transition-transform duration-300 ease-out flex items-center justify-center"
+          className="transition-transform duration-300 ease-out flex items-center justify-center m-auto"
           style={{
             transform: `rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: "center center",
@@ -91,7 +101,7 @@ export function RotateViewer({
           <img
             src={src}
             alt={alt}
-            className="max-w-none w-auto h-auto max-h-[80vh] object-contain select-none pointer-events-auto shadow-2xl"
+            className="max-w-none w-auto h-auto max-h-[70vh] object-contain select-none pointer-events-auto shadow-2xl"
             draggable={false}
           />
         </div>
@@ -121,7 +131,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas en la posición que quedó bien */}
+      {/* Barra de herramientas en la posición actual */}
       {showControls && (
         <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
@@ -144,18 +154,20 @@ export function RotateViewer({
 
           <span className="w-4 h-[1px] bg-border/60 my-1" />
 
+          {/* Zoom en pasos de 0.25 hasta máximo 3.0 */}
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.3, 3))}
+            onClick={() => setScale((s) => Math.min(s + 0.25, 3.0))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
 
+          {/* Zoom para alejar en pasos de 0.25 hasta mínimo 0.4 */}
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(s - 0.3, 0.8))}
+            onClick={() => setScale((s) => Math.max(s - 0.25, 0.4))}
             title="Alejar (Zoom -)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -165,7 +177,7 @@ export function RotateViewer({
           <button
             type="button"
             onClick={() => {
-              setScale(1);
+              setScale(1.5);
               setRotation(0);
             }}
             title="Restablecer vista"
