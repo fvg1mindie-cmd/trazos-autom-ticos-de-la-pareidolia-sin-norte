@@ -79,8 +79,8 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Lienzo con Scroll libre para ver la imagen completa sin recortes al ampliar */}
-      <div className="w-full min-h-full flex items-center justify-center py-24 px-12">
+      {/* Margen superior duplicado (pt-96) para dar recorrido de scroll completo al hacer zoom */}
+      <div className="w-full min-h-full flex items-center justify-center pt-96 pb-32 px-12">
         <div 
           className="transition-transform duration-300 ease-out flex items-center justify-center"
           style={{
@@ -121,7 +121,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas en la marca verde (Esquina inferior derecha al lado del audio/ojo) */}
+      {/* Barra de herramientas vertical (Mantenida exactamente donde quedó bien) */}
       {showControls && (
         <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
