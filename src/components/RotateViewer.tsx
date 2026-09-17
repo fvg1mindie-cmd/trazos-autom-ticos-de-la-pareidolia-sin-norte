@@ -32,7 +32,7 @@ export function RotateViewer({
 }: RotateViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1.2);
+  const [scale, setScale] = useState<number>(1);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -41,17 +41,6 @@ export function RotateViewer({
       if (saved) setRotation(Number(saved));
     }
   }, [storageKey]);
-
-  // Centra automáticamente la vista al cargar o cambiar de obra
-  useEffect(() => {
-    if (containerRef.current) {
-      const el = containerRef.current;
-      setTimeout(() => {
-        el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
-        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-      }, 50);
-    }
-  }, [src]);
 
   const handleRotate = (degrees: number) => {
     const newRot = (rotation + degrees + 360) % 360;
@@ -90,23 +79,18 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Contenedor Grid para asegurar expansión centrada y simétrica sin desvíos diagonales */}
-      <div className="min-w-full min-h-full grid place-items-center p-24">
-        <div 
-          className="transition-all duration-300 ease-out flex items-center justify-center"
+      {/* Marco contenedor centrado */}
+      <div className="w-full h-full min-h-[80vh] flex items-center justify-center p-8">
+        <img
+          src={src}
+          alt={alt}
+          className="max-w-[85vw] max-h-[75vh] object-contain transition-transform duration-200 ease-out shadow-2xl select-none"
           style={{
-            transform: `rotate(${rotation}deg)`,
-            width: `${scale * 100}%`,
-            maxWidth: scale <= 1 ? "100%" : "none",
+            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transformOrigin: "center center",
           }}
-        >
-          <img
-            src={src}
-            alt={alt}
-            className="w-full h-auto max-h-[80vh] object-contain select-none pointer-events-auto shadow-2xl"
-            draggable={false}
-          />
-        </div>
+          draggable={false}
+        />
       </div>
 
       {/* Flecha Anterior */}
@@ -133,7 +117,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas vertical al lado de audio/ojo */}
+      {/* Barra de herramientas vertical en el lugar correcto */}
       {showControls && (
         <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
@@ -158,7 +142,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.3, 3.0))}
+            onClick={() => setScale((s) => Math.min(s + 0.3, 3))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -177,7 +161,7 @@ export function RotateViewer({
           <button
             type="button"
             onClick={() => {
-              setScale(1.2);
+              setScale(1);
               setRotation(0);
             }}
             title="Restablecer vista"
