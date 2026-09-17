@@ -33,7 +33,9 @@ export function RotateViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
   const [scale, setScale] = useState<number>(1);
-  const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isInteracting, setIsInteracting] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [startAngle, setStartAngle] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
@@ -59,10 +61,11 @@ export function RotateViewer({
 
   const handleReset = () => {
     setScale(1);
+    setPosition({ x: 0, y: 0 });
     saveRotation(0);
   };
 
-  // Cálculo de ángulo respecto al centro de la imagen para la "manito"
+  // Ángulo matemáticamente exacto respecto al centro para la rotación con manito
   const getAngle = (clientX: number, clientY: number) => {
     if (!containerRef.current) return 0;
     const rect = containerRef.current.getBoundingClientRect();
@@ -73,22 +76,40 @@ export function RotateViewer({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsRotating(true);
-    const currentMouseAngle = getAngle(e.clientX, e.clientY);
-    setStartAngle(currentMouseAngle - rotation);
+    setIsInteracting(true);
+    if (scale > 1) {
+      // Si hay zoom, guardamos la posición inicial para mover (Pan)
+      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    } else {
+      // Si no hay zoom, guardamos el ángulo para rotar
+      const currentMouseAngle = getAngle(e.clientX, e.clientY);
+      setStartAngle(currentMouseAngle - rotation);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isRotating) return;
-    const currentMouseAngle = getAngle(e.clientX, e.clientY);
-    const newRotation = (currentMouseAngle - startAngle + 360) % 360;
-    setRotation(Math.round(newRotation));
+    if (!isInteracting) return;
+
+    if (scale > 1) {
+      // Con Zoom: Arrastrar para mover la imagen por la pantalla
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    } else {
+      // Sin Zoom: Arrastrar para girar
+      const currentMouseAngle = getAngle(e.clientX, e.clientY);
+      const newRotation = (currentMouseAngle - startAngle + 360) % 360;
+      setRotation(Math.round(newRotation));
+    }
   };
 
   const handleMouseUp = () => {
-    if (isRotating) {
-      setIsRotating(false);
-      saveRotation(rotation);
+    if (isInteracting) {
+      setIsInteracting(false);
+      if (scale === 1) {
+        saveRotation(rotation);
+      }
     }
   };
 
@@ -121,9 +142,11 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Área central que encapsula la imagen */}
+      {/* Contenedor e imagen */}
       <div 
-        className="w-full h-full flex items-center justify-center p-8 cursor-grab active:cursor-grabbing"
+        className={`w-full h-full flex items-center justify-center p-8 ${
+          scale > 1 ? "cursor-move" : "cursor-grab active:cursor-grabbing"
+        }`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -132,9 +155,9 @@ export function RotateViewer({
         <img
           src={src}
           alt={alt}
-          className="max-w-[75vw] max-h-[70vh] object-contain shadow-2xl pointer-events-none transition-transform duration-75 ease-out"
+          className="max-w-[80vw] max-h-[75vh] object-contain shadow-2xl pointer-events-none transition-transform duration-75 ease-out"
           style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: "center center",
           }}
           draggable={false}
@@ -165,7 +188,7 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas vertical (Movida más a la izquierda para no solapar) */}
+      {/* Barra de herramientas flotante */}
       {showControls && (
         <div className="absolute right-28 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
@@ -190,7 +213,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.25, 3))}
+            onClick={() => setScale((s) => Math.min(s + 0.3, 4))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -199,7 +222,11 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(s - 0.25, 0.5))}
+            onClick={() => setScale((s) => {
+              const newScale = Math.max(s - 0.3, 1);
+              if (newScale === 1) setPosition({ x: 0, y: 0 });
+              return newScale;
+            })}
             title="Alejar (Zoom -)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
