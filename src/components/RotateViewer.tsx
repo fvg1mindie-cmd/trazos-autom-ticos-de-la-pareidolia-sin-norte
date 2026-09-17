@@ -39,7 +39,6 @@ export function RotateViewer({
   const [startAngle, setStartAngle] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Cargar rotación guardada
   useEffect(() => {
     if (storageKey) {
       const saved = localStorage.getItem(storageKey);
@@ -65,7 +64,6 @@ export function RotateViewer({
     saveRotation(0);
   };
 
-  // Ángulo matemáticamente exacto respecto al centro para la rotación con manito
   const getAngle = (clientX: number, clientY: number) => {
     if (!containerRef.current) return 0;
     const rect = containerRef.current.getBoundingClientRect();
@@ -75,36 +73,32 @@ export function RotateViewer({
     return radians * (180 / Math.PI);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const startInteraction = (clientX: number, clientY: number) => {
     setIsInteracting(true);
     if (scale > 1) {
-      // Si hay zoom, guardamos la posición inicial para mover (Pan)
-      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+      setDragStart({ x: clientX - position.x, y: clientY - position.y });
     } else {
-      // Si no hay zoom, guardamos el ángulo para rotar
-      const currentMouseAngle = getAngle(e.clientX, e.clientY);
-      setStartAngle(currentMouseAngle - rotation);
+      const currentAngle = getAngle(clientX, clientY);
+      setStartAngle(currentAngle - rotation);
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const moveInteraction = (clientX: number, clientY: number) => {
     if (!isInteracting) return;
 
     if (scale > 1) {
-      // Con Zoom: Arrastrar para mover la imagen por la pantalla
       setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
+        x: clientX - dragStart.x,
+        y: clientY - dragStart.y
       });
     } else {
-      // Sin Zoom: Arrastrar para girar
-      const currentMouseAngle = getAngle(e.clientX, e.clientY);
-      const newRotation = (currentMouseAngle - startAngle + 360) % 360;
+      const currentAngle = getAngle(clientX, clientY);
+      const newRotation = (currentAngle - startAngle + 360) % 360;
       setRotation(Math.round(newRotation));
     }
   };
 
-  const handleMouseUp = () => {
+  const endInteraction = () => {
     if (isInteracting) {
       setIsInteracting(false);
       if (scale === 1) {
@@ -138,24 +132,35 @@ export function RotateViewer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full bg-background overflow-hidden select-none ${
-        fill ? "min-h-[100svh]" : "min-h-[600px]"
+      className={`relative w-full h-full bg-background overflow-hidden select-none touch-none ${
+        fill ? "min-h-[100svh]" : "min-h-[500px] md:min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Contenedor e imagen */}
+      {/* Área interactiva */}
       <div 
-        className={`w-full h-full flex items-center justify-center p-8 ${
+        className={`w-full h-full flex items-center justify-center p-4 md:p-8 ${
           scale > 1 ? "cursor-move" : "cursor-grab active:cursor-grabbing"
         }`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseDown={(e) => startInteraction(e.clientX, e.clientY)}
+        onMouseMove={(e) => moveInteraction(e.clientX, e.clientY)}
+        onMouseUp={endInteraction}
+        onMouseLeave={endInteraction}
+        onTouchStart={(e) => {
+          if (e.touches.length === 1) {
+            startInteraction(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 1) {
+            moveInteraction(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }}
+        onTouchEnd={endInteraction}
       >
         <img
           src={src}
           alt={alt}
-          className="max-w-[80vw] max-h-[75vh] object-contain shadow-2xl pointer-events-none transition-transform duration-75 ease-out"
+          className="max-w-[85vw] md:max-w-[75vw] max-h-[60vh] md:max-h-[70vh] object-contain shadow-2xl pointer-events-none transition-transform duration-75 ease-out"
           style={{
             transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: "center center",
@@ -170,9 +175,9 @@ export function RotateViewer({
           type="button"
           onClick={onPrev}
           title="Imagen anterior"
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
+          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
         </button>
       )}
 
@@ -182,20 +187,20 @@ export function RotateViewer({
           type="button"
           onClick={onNext}
           title="Siguiente imagen"
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
+          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
         </button>
       )}
 
-      {/* Barra de herramientas flotante */}
+      {/* Barra de Herramientas Responsive */}
       {showControls && (
-        <div className="absolute right-28 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 md:left-auto md:right-28 md:translate-x-0 md:bottom-6 z-50 flex flex-row md:flex-col items-center gap-1.5 md:gap-2 rounded-full border border-border/70 bg-background/90 p-1.5 md:p-2 backdrop-blur shadow-2xl">
           <button
             type="button"
             onClick={() => handleRotateButton(-90)}
             title="Girar 90° a la izquierda"
-            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -204,18 +209,18 @@ export function RotateViewer({
             type="button"
             onClick={() => handleRotateButton(90)}
             title="Girar 90° a la derecha"
-            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <RotateCw className="h-4 w-4" />
           </button>
 
-          <span className="w-4 h-[1px] bg-border/60 my-1" />
+          <span className="h-4 w-[1px] md:w-4 md:h-[1px] bg-border/60 mx-1 md:my-1" />
 
           <button
             type="button"
             onClick={() => setScale((s) => Math.min(s + 0.3, 4))}
             title="Acercar (Zoom +)"
-            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <ZoomIn className="h-4 w-4" />
           </button>
@@ -228,7 +233,7 @@ export function RotateViewer({
               return newScale;
             })}
             title="Alejar (Zoom -)"
-            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
@@ -237,18 +242,18 @@ export function RotateViewer({
             type="button"
             onClick={handleReset}
             title="Restablecer vista"
-            className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
 
-          <span className="w-4 h-[1px] bg-border/60 my-1" />
+          <span className="h-4 w-[1px] md:w-4 md:h-[1px] bg-border/60 mx-1 md:my-1" />
 
           <button
             type="button"
             onClick={toggleFullscreen}
             title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-            className="rounded-full p-2 text-primary hover:bg-primary/20 transition-colors"
+            className="rounded-full p-1.5 md:p-2 text-primary hover:bg-primary/20 transition-colors"
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </button>
