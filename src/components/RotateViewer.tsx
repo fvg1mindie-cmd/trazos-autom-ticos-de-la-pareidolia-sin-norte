@@ -36,6 +36,7 @@ export function RotateViewer({
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [initialRotation, setInitialRotation] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -45,7 +46,6 @@ export function RotateViewer({
     }
   }, [storageKey]);
 
-  // Restablece la posición al cambiar la escala a 1
   const handleReset = () => {
     setScale(1);
     setRotation(0);
@@ -82,22 +82,34 @@ export function RotateViewer({
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
 
-  // Lógica para arrastrar (pan) la imagen cuando hay Zoom
+  // Lógica de interacción con la "manito"
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale <= 1) return;
     setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    setDragStart({ x: e.clientX, y: e.clientY - position.y });
+    setInitialRotation(rotation);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || scale <= 1) return;
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
+    if (!isDragging) return;
+
+    if (scale > 1) {
+      // Con Zoom: la manito desplaza la imagen (Pan)
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - (dragStart.y - position.y)
+      });
+    } else {
+      // Sin Zoom (escala 1): la manito gira la imagen al arrastrar horizontalmente
+      const deltaX = e.clientX - dragStart.x;
+      const newAngle = (initialRotation + deltaX * 0.5 + 360) % 360;
+      setRotation(Math.round(newAngle));
+    }
   };
 
   const handleMouseUp = () => {
+    if (isDragging && storageKey) {
+      localStorage.setItem(storageKey, String(rotation));
+    }
     setIsDragging(false);
   };
 
@@ -108,11 +120,9 @@ export function RotateViewer({
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Área principal donde se encuadra y desplaza la imagen */}
+      {/* Área interactiva de la imagen */}
       <div 
-        className={`w-full h-full flex items-center justify-center p-4 ${
-          scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-default"
-        }`}
+        className="w-full h-full flex items-center justify-center p-4 cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -121,7 +131,7 @@ export function RotateViewer({
         <img
           src={src}
           alt={alt}
-          className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out shadow-2xl"
+          className="max-w-full max-h-full object-contain transition-transform duration-75 ease-out shadow-2xl pointer-events-none"
           style={{
             transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: "center center",
@@ -154,9 +164,9 @@ export function RotateViewer({
         </button>
       )}
 
-      {/* Barra de herramientas vertical (posicionada relativa al contenedor) */}
+      {/* Barra de herramientas (Desplazada hacia la izquierda para despejar botones) */}
       {showControls && (
-        <div className="absolute right-6 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
+        <div className="absolute right-24 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
             type="button"
             onClick={() => handleRotate(-90)}
