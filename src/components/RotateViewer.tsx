@@ -33,6 +33,9 @@ export function RotateViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [rotation, setRotation] = useState<number>(0);
   const [scale, setScale] = useState<number>(1);
+  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -41,6 +44,13 @@ export function RotateViewer({
       if (saved) setRotation(Number(saved));
     }
   }, [storageKey]);
+
+  // Restablece la posición al cambiar la escala a 1
+  const handleReset = () => {
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+  };
 
   const handleRotate = (degrees: number) => {
     const newRot = (rotation + degrees + 360) % 360;
@@ -72,21 +82,48 @@ export function RotateViewer({
     return () => document.removeEventListener("fullscreenchange", handleFSChange);
   }, []);
 
+  // Lógica para arrastrar (pan) la imagen cuando hay Zoom
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || scale <= 1) return;
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-full bg-background overflow-auto ${
+      className={`relative w-full h-full bg-background overflow-hidden select-none ${
         fill ? "min-h-[100svh]" : "min-h-[600px]"
       } ${isFullscreen ? "bg-black" : ""}`}
     >
-      {/* Marco contenedor centrado */}
-      <div className="w-full h-full min-h-[80vh] flex items-center justify-center p-8">
+      {/* Área principal donde se encuadra y desplaza la imagen */}
+      <div 
+        className={`w-full h-full flex items-center justify-center p-4 ${
+          scale > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+        }`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
         <img
           src={src}
           alt={alt}
-          className="max-w-[85vw] max-h-[75vh] object-contain transition-transform duration-200 ease-out shadow-2xl select-none"
+          className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out shadow-2xl"
           style={{
-            transform: `rotate(${rotation}deg) scale(${scale})`,
+            transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${scale})`,
             transformOrigin: "center center",
           }}
           draggable={false}
@@ -99,7 +136,7 @@ export function RotateViewer({
           type="button"
           onClick={onPrev}
           title="Imagen anterior"
-          className="fixed left-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/50 p-2 text-foreground/80 backdrop-blur hover:bg-background/80 hover:text-foreground transition-all"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
         >
           <ChevronLeft className="h-6 w-6" />
         </button>
@@ -111,15 +148,15 @@ export function RotateViewer({
           type="button"
           onClick={onNext}
           title="Siguiente imagen"
-          className="fixed right-3 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/50 p-2 text-foreground/80 backdrop-blur hover:bg-background/80 hover:text-foreground transition-all"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-40 rounded-full bg-background/60 p-2 text-foreground/80 backdrop-blur hover:bg-background/90 hover:text-foreground transition-all shadow-md"
         >
           <ChevronRight className="h-6 w-6" />
         </button>
       )}
 
-      {/* Barra de herramientas vertical en el lugar correcto */}
+      {/* Barra de herramientas vertical (posicionada relativa al contenedor) */}
       {showControls && (
-        <div className="fixed right-14 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
+        <div className="absolute right-6 bottom-6 z-50 flex flex-col items-center gap-2 rounded-full border border-border/70 bg-background/80 p-2 backdrop-blur shadow-2xl">
           <button
             type="button"
             onClick={() => handleRotate(-90)}
@@ -142,7 +179,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.min(s + 0.3, 3))}
+            onClick={() => setScale((s) => Math.min(s + 0.3, 4))}
             title="Acercar (Zoom +)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -151,7 +188,13 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => setScale((s) => Math.max(s - 0.3, 0.5))}
+            onClick={() =>
+              setScale((s) => {
+                const nextScale = Math.max(s - 0.3, 1);
+                if (nextScale === 1) setPosition({ x: 0, y: 0 });
+                return nextScale;
+              })
+            }
             title="Alejar (Zoom -)"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
@@ -160,10 +203,7 @@ export function RotateViewer({
 
           <button
             type="button"
-            onClick={() => {
-              setScale(1);
-              setRotation(0);
-            }}
+            onClick={handleReset}
             title="Restablecer vista"
             className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
