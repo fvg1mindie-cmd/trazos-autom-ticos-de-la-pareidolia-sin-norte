@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Eye, EyeOff, RotateCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, RotateCw } from "lucide-react";
 import { artworksQueryOptions, findArtwork, findNeighbors } from "@/lib/artworks";
 import { RotateViewer } from "@/components/RotateViewer";
 import { AmbientAudio } from "@/components/AmbientAudio";
@@ -84,32 +84,38 @@ function ObraPage() {
           fill
         />
 
+        {/* Flechas y contador de fotos: una sola pastilla abajo */}
         {obra.imagenes.length > 1 && (
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 items-center justify-between px-3">
-            <button
-              type="button"
-              onClick={() => setPhotoIndex((index) => (index - 1 + obra.imagenes.length) % obra.imagenes.length)}
-              aria-label="Ver foto anterior"
-              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
+          <div
+            className={`pointer-events-none absolute inset-x-0 bottom-[4.75rem] z-20 flex justify-center transition-opacity duration-500 md:bottom-7 ${
+              uiVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <div
+              className={`flex items-center gap-1 rounded-full border border-border/60 bg-background/60 px-1.5 py-1 backdrop-blur ${
+                uiVisible ? "pointer-events-auto" : "pointer-events-none"
+              }`}
             >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setPhotoIndex((index) => (index + 1) % obra.imagenes.length)}
-              aria-label="Ver foto siguiente"
-              className="pointer-events-auto rounded-full border border-border/70 bg-background/65 p-2.5 text-muted-foreground backdrop-blur transition-colors hover:text-primary"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
-        )}
-
-        {obra.imagenes.length > 1 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-7 z-20 flex justify-center">
-            <span className="rounded-full border border-border/60 bg-background/60 px-3 py-1.5 font-mono text-[10px] tracking-[0.2em] text-muted-foreground backdrop-blur">
-              {photoIndex + 1} / {obra.imagenes.length}
-            </span>
+              <button
+                type="button"
+                onClick={() => setPhotoIndex((index) => (index - 1 + obra.imagenes.length) % obra.imagenes.length)}
+                aria-label="Ver foto anterior"
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="px-2 font-mono text-[10px] tracking-[0.2em] text-muted-foreground">
+                {photoIndex + 1} / {obra.imagenes.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPhotoIndex((index) => (index + 1) % obra.imagenes.length)}
+                aria-label="Ver foto siguiente"
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -131,6 +137,26 @@ function ObraPage() {
           <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
             {obra.catalogo}
           </span>
+        </div>
+
+        {/* Aviso: la ficha está más abajo */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 top-16 z-20 flex justify-center transition-opacity duration-500 ${
+            uiVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              document.getElementById("ficha")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className={`flex items-center gap-2 rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur transition-colors hover:text-primary ${
+              uiVisible ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+          >
+            Ver ficha
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
         </div>
 
         {/* Indicador de giro */}
