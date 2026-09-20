@@ -255,8 +255,8 @@ function Index() {
                     </h3>
                     <p className="mt-1 font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
                       {obra.tecnica} · {obra.anio || "—"}
-                      {obra.originalVendido && (
-                        <span className="ml-2 text-neon">· vendida</span>
+                      {obra.estado !== "disponible" && (
+                        <span className="ml-2 text-neon">· {obra.estado}</span>
                       )}
                     </p>
                   </div>
@@ -283,8 +283,8 @@ function Index() {
           <p className="mt-8 max-w-md text-sm leading-relaxed text-muted-foreground">
             Archivo abierto, sin edición posterior: las fotos conservan el color
             y el contraste originales del papel. Cada obra se numeró en el orden
-            en que apareció. Cuando el original se vende, su edición se cierra
-            para siempre.
+            en que apareció. Cuando el original se vende u obsequia, su edición
+            se cierra para siempre.
           </p>
         </div>
       </section>
