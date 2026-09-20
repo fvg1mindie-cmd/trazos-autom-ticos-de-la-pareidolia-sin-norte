@@ -8,12 +8,13 @@ type Montaje = "lamina" | "marco" | "magnetico";
 
 /**
  * Tienda de la obra: original y/o impresiones, con selector de escala y montaje.
- * Regla de exclusividad: si el original está vendido, la edición se cierra
- * para siempre y las impresiones quedan bloqueadas.
+ * Regla de exclusividad: si el original está vendido u obsequiado, la edición
+ * se cierra para siempre y las impresiones quedan bloqueadas.
  */
 export function ObraTienda({ obra }: { obra: Artwork }) {
   const [modalAbierto, setModalAbierto] = useState(false);
-  const cerrada = obra.originalVendido;
+  const cerrada = obra.estado !== "disponible";
+  const obsequiada = obra.estado === "obsequiada";
   const hayImpresiones = obra.impresiones && obra.impresiones.length > 0;
 
   const [pieza, setPieza] = useState<Pieza>(
@@ -64,12 +65,12 @@ export function ObraTienda({ obra }: { obra: Artwork }) {
     return (
       <section className="mt-10 rounded-2xl border border-border/70 bg-card/50 p-6">
         <p className="flex items-center gap-2 font-mono text-[11px] tracking-[0.25em] text-neon uppercase">
-          <Lock className="h-3.5 w-3.5" /> Edición cerrada
+          <Lock className="h-3.5 w-3.5" /> {obsequiada ? "Obra obsequiada" : "Edición cerrada"}
         </p>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          El original de esta obra fue vendido. Por la regla de exclusividad del
-          archivo, su edición se cierra para siempre: no se imprimen ni se
-          venden reproducciones de esta pieza. Existe una sola, y ya tiene pared.
+          {obsequiada
+            ? "El original de esta obra fue obsequiado y no está a la venta. Por la regla de exclusividad del archivo, su edición se cierra para siempre: no se imprimen ni se venden reproducciones de esta pieza. Existe una sola, y ya tiene pared."
+            : "El original de esta obra fue vendido. Por la regla de exclusividad del archivo, su edición se cierra para siempre: no se imprimen ni se venden reproducciones de esta pieza. Existe una sola, y ya tiene pared."}
         </p>
       </section>
     );
