@@ -123,17 +123,12 @@ function ObraPage() {
         <div
           className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex h-14 items-center justify-between px-5 ${fade(uiVisible)}`}
         >
-          <button
-            type="button"
-            onClick={() =>
-              window.history.length > 1
-                ? window.history.back()
-                : window.location.assign("/")
-            }
+          <Link
+            to="/"
             className="pointer-events-auto rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground uppercase backdrop-blur transition-colors hover:text-neon"
           >
             ← Volver
-          </button>
+          </Link>
           <span className="rounded-full border border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-neon uppercase backdrop-blur">
             {obra.catalogo}
           </span>
