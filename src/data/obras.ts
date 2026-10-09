@@ -27,7 +27,7 @@ export interface Artwork {
 }
 
 const DESCRIPCION =
-  "No hago descripciones la obra es sin norte cada persona completa la obra al observar la colocando la en la posición que deseé no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones";
+  "PROMOCIÓN LANZAMIENTO (Primeras 10 obras): Valor de la obra a lo que tu corazón dicte, más gastos de envío, impresión o marcos, según lo que elijas. No hago descripciones, la obra es sin norte: cada persona completa la obra al observarla colocándola en la posición que desee; no hay posición correcta ni arriba ni abajo para no predisponer sus observaciones.";
 
 /**
  * Arma una obra a partir de su letra y su estado.
@@ -52,7 +52,7 @@ function crearObra(
     descripcion: DESCRIPCION,
     imagen: `/${L}0001.jpg`,
     imagenes: [1, 2, 3, 4].map((n) => `/${L}000${n}.jpg`),
-    precioOriginal: 30,
+    precioOriginal: 0,
     impresiones: [],
     precioMarco: 10,
     precioMarcoMagnetico: 18,
